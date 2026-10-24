@@ -10,7 +10,12 @@ export type DefectType =
   | "obstructed-ui"
   | "misaligned-element"
   | "unreadable-text"
-  | "missing-content";
+  | "missing-content"
+  | "safe-area-intrusion"
+  | "keyboard-obstruction"
+  | "hinge-overlap"
+  | "tv-overscan-violation"
+  | "tv-missing-focus-ring";
 
 export type DefectSeverity = "critical" | "warning" | "info";
 
@@ -32,4 +37,12 @@ export interface Finding {
   description: string;
   renderId: string;
   suggestedFix?: string;
+  // Phase 2 State and Device metadata
+  stateId?: string;
+  trace?: string[];
+  targetId?: string;
+  device?: string;
+  fidelity?: "real" | "webview" | "approximate";
+  proposedFixId?: string;
 }
+

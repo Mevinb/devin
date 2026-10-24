@@ -35,10 +35,14 @@ export function findServeDirectory(targetPath: string): string {
 }
 
 export async function startStaticServer(targetDir: string): Promise<TargetResolution> {
+  const resolved = path.resolve(process.cwd(), targetDir);
+  const isFile = fs.existsSync(resolved) && !fs.statSync(resolved).isDirectory();
   const serveDir = findServeDirectory(targetDir);
+  const fileName = isFile ? path.basename(resolved) : "";
+
   const handler = sirv(serveDir, {
     dev: true,
-    single: true,
+    single: !isFile,
     dotfiles: false
   });
 
@@ -53,7 +57,7 @@ export async function startStaticServer(targetDir: string): Promise<TargetResolu
         reject(new Error("Failed to get server port"));
         return;
       }
-      const url = `http://127.0.0.1:${address.port}/`;
+      const url = `http://127.0.0.1:${address.port}/${fileName}`;
       resolve({
         url,
         isLocal: true,
@@ -64,6 +68,7 @@ export async function startStaticServer(targetDir: string): Promise<TargetResolu
         }
       });
     });
+
 
     server.on("error", (err) => {
       reject(err);

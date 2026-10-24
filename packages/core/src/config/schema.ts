@@ -46,9 +46,55 @@ export const DevServerConfigSchema = z.object({
 
 export type DevServerConfig = z.infer<typeof DevServerConfigSchema>;
 
+export const DeviceTargetSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  runtime: z.enum(["android", "playwright", "windows"]),
+  fidelity: z.enum(["real", "webview", "approximate"]).default("approximate"),
+  viewport: z.object({
+    width: z.number().int().positive(),
+    height: z.number().int().positive()
+  }),
+  deviceScaleFactor: z.number().positive().default(1),
+  userAgent: z.string().optional(),
+  isMobile: z.boolean().default(false),
+  hasTouch: z.boolean().default(false),
+  orientation: z.enum(["portrait", "landscape"]).default("landscape").optional(),
+  safeAreaInsets: z
+    .object({
+      top: z.number(),
+      right: z.number(),
+      bottom: z.number(),
+      left: z.number()
+    })
+    .optional(),
+  notchRect: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+      width: z.number(),
+      height: z.number()
+    })
+    .optional(),
+  hingeRect: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+      width: z.number(),
+      height: z.number()
+    })
+    .optional(),
+  isTV: z.boolean().optional(),
+  isWearable: z.boolean().optional(),
+  isFoldable: z.boolean().optional()
+});
+
+export type DeviceConfig = z.infer<typeof DeviceTargetSchema>;
+
 export const ScanConfigSchema = z.object({
   target: z.string().min(1, "Target URL or local directory path is required"),
   viewports: z.array(ViewportConfigSchema).optional(),
+  devices: z.array(z.union([z.string(), DeviceTargetSchema])).optional(),
   browser: z.literal("chromium").default("chromium"),
   fullPage: z.boolean().default(true),
   waitUntil: z.enum(["load", "domcontentloaded", "networkidle", "commit"]).default("networkidle"),

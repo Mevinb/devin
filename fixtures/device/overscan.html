@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Overscan Defect Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #020617; color: white; font-family: sans-serif; width: 1920px; height: 1080px; position: relative; overflow: hidden; }
+    /* Edge controls positioned right at extreme edges (< 5% overscan margin) */
+    .tv-corner-btn-top-left {
+      position: absolute;
+      top: 15px;
+      left: 20px;
+      padding: 10px 20px;
+      background: #dc2626;
+      color: white;
+      border: none;
+      font-weight: bold;
+    }
+    .tv-corner-btn-bottom-right {
+      position: absolute;
+      bottom: 15px;
+      right: 20px;
+      padding: 10px 20px;
+      background: #dc2626;
+      color: white;
+      border: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <button class="tv-corner-btn-top-left" id="btnTvExit">Exit App</button>
+  <div style="position: absolute; top: 400px; left: 500px; text-align: center;">
+    <h1>10-Foot Living Room TV UI</h1>
+    <p>Notice the Exit and Next buttons located directly in the physical bezel clip zone!</p>
+  </div>
+  <button class="tv-corner-btn-bottom-right" id="btnTvNext">Next Channel</button>
+</body>
+</html>

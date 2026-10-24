@@ -159,8 +159,13 @@ export function extractDOMSnapshotInBrowser(): DOMSnapshot {
         fontSize: style.fontSize || "",
         lineHeight: style.lineHeight || "",
         color: style.color || "",
-        backgroundColor: style.backgroundColor || ""
+        backgroundColor: style.backgroundColor || "",
+        outlineStyle: style.outlineStyle || "none",
+        outlineWidth: style.outlineWidth || "0px",
+        boxShadow: style.boxShadow || "none",
+        borderWidth: style.borderWidth || "0px"
       },
+
       metrics: {
         scrollWidth: el.scrollWidth || 0,
         scrollHeight: el.scrollHeight || 0,

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foldable Hinge Defect Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+    /* Centered button that spans across Pixel Fold's vertical hinge seam at x: 418px */
+    .hinge-straddle-btn {
+      position: absolute;
+      left: 360px;
+      top: 300px;
+      width: 150px;
+      padding: 16px;
+      background: #dc2626;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Foldable Screen Test</h1>
+  <p>The button below spans right across the screen crease:</p>
+  <button class="hinge-straddle-btn" id="straddleBtn">
+    Submit Order
+  </button>
+</body>
+</html>

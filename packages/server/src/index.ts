@@ -3,7 +3,14 @@ import path from "node:path";
 import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
-import { scan, type ScanConfigInput, type ScanReport } from "@pixelsentinel/core";
+import { defaultAdbClient, runDevicesDoctor } from "@pixelsentinel/android";
+import {
+  globalDeviceRegistry,
+  PilotThenReplayScheduler,
+  scan,
+  type ScanConfigInput,
+  type ScanReport
+} from "@pixelsentinel/core";
 
 export interface ScanJob {
   id: string;
@@ -58,6 +65,32 @@ export function createServer(options: { outputDir?: string } = {}) {
     return { status: "ok", timestamp: new Date().toISOString() };
   });
 
+  server.get("/api/devices/doctor", async () => {
+    return runDevicesDoctor();
+  });
+
+  server.get("/api/devices", async () => {
+    const builtins = globalDeviceRegistry.listBuiltins();
+    const adbDevices = await defaultAdbClient.listDevices();
+    return {
+      devices: builtins,
+      adbDevices
+    };
+  });
+
+  server.get("/api/fixes", async () => {
+    const proposalsFile = path.join(outputDir, "fixes", "proposals.json");
+    if (fs.existsSync(proposalsFile)) {
+      try {
+        const data = fs.readFileSync(proposalsFile, "utf8");
+        return JSON.parse(data);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
   server.get("/api/scans", async () => {
     return Array.from(jobs.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -89,16 +122,17 @@ export function createServer(options: { outputDir?: string } = {}) {
   });
 
   server.post("/api/scans", async (req, reply) => {
-    const body = req.body as Partial<ScanConfigInput>;
+    const body = req.body as Partial<ScanConfigInput> & { explore?: boolean };
     if (!body || !body.target) {
       reply.status(400).send({ error: "Target URL or path is required" });
       return;
     }
 
+    const target = body.target;
     const jobId = `job-${Date.now()}`;
     const job: ScanJob = {
       id: jobId,
-      target: body.target,
+      target,
       status: "queued",
       progress: {
         step: "queued",
@@ -115,6 +149,98 @@ export function createServer(options: { outputDir?: string } = {}) {
     (async () => {
       try {
         job.status = "running";
+
+        if (body.explore) {
+          job.progress = {
+            step: "exploring",
+            completed: 1,
+            total: 3,
+            detail: "Running pilot-then-replay autonomous exploration..."
+          };
+
+          const scheduler = new PilotThenReplayScheduler();
+          const targets = [
+            globalDeviceRegistry.resolveTarget("chromium:desktop-1080p"),
+            globalDeviceRegistry.resolveTarget("android:pixel-8"),
+            globalDeviceRegistry.resolveTarget("webkit:iphone-15-pro")
+          ];
+
+          const exploreResult = await scheduler.run(
+            target,
+            targets,
+            { maxSteps: 15 },
+            outputDir
+          );
+
+          // Convert exploreResult to ScanReport format
+          const matrix = exploreResult.matrix.map((entry) => ({
+            renderId: `${entry.deviceId}-${entry.stateId}`,
+            name: `${entry.deviceName} — ${entry.stateName}`,
+            viewport: {
+              ...entry.captureResult.renderConfig,
+              renderId: `${entry.deviceId}-${entry.stateId}`,
+              fidelity: entry.fidelity
+            },
+            status: (entry.findings.length === 0 ? "pass" : "fail") as "pass" | "fail",
+            findingsCount: {
+              critical: entry.findings.filter((f) => f.severity === "critical").length,
+              warning: entry.findings.filter((f) => f.severity === "warning").length,
+              info: entry.findings.filter((f) => f.severity === "info").length,
+              total: entry.findings.length
+            },
+            screenshotRelPath: path.relative(outputDir, entry.captureResult.screenshotPath),
+            annotatedRelPath: path.relative(outputDir, entry.captureResult.screenshotPath),
+            findings: entry.findings,
+            consoleErrors: [],
+            failedRequests: []
+          }));
+
+          const scanReport: ScanReport = {
+            id: `explore-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            target,
+            summary: {
+              totalViewports: matrix.length,
+              totalFindings: exploreResult.allFindings.length,
+              criticalFindings: exploreResult.allFindings.filter((f) => f.severity === "critical").length,
+              warningFindings: exploreResult.allFindings.filter((f) => f.severity === "warning").length,
+              infoFindings: exploreResult.allFindings.filter((f) => f.severity === "info").length,
+              passedViewports: matrix.filter((m) => m.status === "pass").length,
+              failedViewports: matrix.filter((m) => m.status === "fail").length,
+              defectBreakdown: {},
+              durationMs: 5000
+            },
+            matrix,
+            config: {
+              target,
+              browser: "chromium",
+              fullPage: true,
+              waitUntil: "networkidle",
+              extraWaitMs: 500,
+              concurrency: 4,
+              vision: { enabled: false, model: "gpt-4o", maxImageDim: 1568 },
+              output: {
+                dir: outputDir,
+                clean: false,
+                html: true,
+                json: true,
+                annotatedImages: true
+              }
+            }
+          };
+
+
+          job.status = "completed";
+          job.report = scanReport;
+          job.progress = {
+            step: "completed",
+            completed: matrix.length,
+            total: matrix.length,
+            detail: "Autonomous exploration completed"
+          };
+          return;
+        }
+
         const scanReport = await scan(
           {
             ...body,
@@ -167,7 +293,6 @@ export async function startServer(port: number = 3000, openBrowser: boolean = fa
   }
 }
 
-// Direct execution support
 if (process.argv[1] && process.argv[1].endsWith("index.js")) {
   const port = parseInt(process.env.PORT || "3000", 10);
   startServer(port);

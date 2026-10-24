@@ -6,4 +6,6 @@ export * from "./vision/index.js";
 export * from "./correlate/index.js";
 export * from "./annotate/index.js";
 export * from "./report/index.js";
+export * from "./runtime/index.js";
+export * from "./explore/index.js";
 export * from "./scanner.js";

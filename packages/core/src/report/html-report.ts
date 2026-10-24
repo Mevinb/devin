@@ -148,7 +148,7 @@ export function generateHtmlReport(report: ScanReport): string {
     /* Matrix Cards Grid */
     .matrix-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 20px;
     }
     .render-card {
@@ -192,6 +192,21 @@ export function generateHtmlReport(report: ScanReport): string {
       align-items: center;
       gap: 6px;
     }
+    .fidelity-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .fidelity-real { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); }
+    .fidelity-webview { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.4); }
+    .fidelity-approx { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
+
     .badge-pass { background: var(--pass-bg); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
     .badge-fail { background: var(--critical-bg); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
 
@@ -242,7 +257,7 @@ export function generateHtmlReport(report: ScanReport): string {
     }
     .modal-body {
       display: grid;
-      grid-template-columns: 1fr 420px;
+      grid-template-columns: 1fr 440px;
       flex: 1;
       overflow: hidden;
     }
@@ -293,6 +308,14 @@ export function generateHtmlReport(report: ScanReport): string {
       cursor: pointer;
     }
     .selector-box:hover { border-color: var(--accent); }
+    .trace-box {
+      background: rgba(0,0,0,0.3);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 8px;
+    }
     .close-btn {
       background: transparent;
       border: none;
@@ -310,7 +333,7 @@ export function generateHtmlReport(report: ScanReport): string {
         <div class="logo-badge">PS</div>
         <div>
           <h1 class="brand-title">PixelSentinel</h1>
-          <p class="brand-subtitle">Responsive Visual Defect Analysis Report</p>
+          <p class="brand-subtitle">Visual QA Platform — Real Devices & Exploration Matrix</p>
         </div>
       </div>
       <div class="target-url" title="${escapeHtml(report.target)}">🎯 ${escapeHtml(report.target)}</div>
@@ -319,7 +342,7 @@ export function generateHtmlReport(report: ScanReport): string {
     <!-- Metrics -->
     <div class="summary-grid">
       <div class="summary-card card-total">
-        <div class="summary-label">Viewports Tested</div>
+        <div class="summary-label">Targets Tested</div>
         <div class="summary-value">${report.summary.totalViewports}</div>
       </div>
       <div class="summary-card card-critical">
@@ -343,7 +366,7 @@ export function generateHtmlReport(report: ScanReport): string {
     <!-- Filters -->
     <div class="filter-bar">
       <div class="filter-tabs" id="filterTabs">
-        <button class="filter-tab active" data-filter="all">All Viewports (${report.matrix.length})</button>
+        <button class="filter-tab active" data-filter="all">All Targets (${report.matrix.length})</button>
         <button class="filter-tab" data-filter="failed">Defects Only (${report.summary.failedViewports})</button>
         <button class="filter-tab" data-filter="passed">Clean Only (${report.summary.passedViewports})</button>
       </div>
@@ -358,7 +381,7 @@ export function generateHtmlReport(report: ScanReport): string {
     <div class="modal-container">
       <div class="modal-header">
         <div>
-          <h2 id="modalTitle" style="font-size: 18px; font-weight: 700;">Viewport Inspector</h2>
+          <h2 id="modalTitle" style="font-size: 18px; font-weight: 700;">Target Inspector</h2>
           <span id="modalSubtitle" style="font-size: 12px; color: var(--text-muted); font-family: monospace;"></span>
         </div>
         <button class="close-btn" id="closeModal">&times;</button>
@@ -388,7 +411,7 @@ export function generateHtmlReport(report: ScanReport): string {
       });
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 48px; color: #94a3b8;">No viewports match current filter.</div>';
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 48px; color: #94a3b8;">No targets match current filter.</div>';
         return;
       }
 
@@ -400,9 +423,13 @@ export function generateHtmlReport(report: ScanReport): string {
         const badgeClass = item.status === "pass" ? "badge-pass" : "badge-fail";
         const badgeText = item.status === "pass" ? "✓ Pass" : "✕ " + item.findings.length + " Defects";
 
+        const fidelity = item.viewport?.fidelity || "approximate";
+        const fidelityClass = fidelity === "real" ? "fidelity-real" : fidelity === "webview" ? "fidelity-webview" : "fidelity-approx";
+
         card.innerHTML = \`
           <div class="render-thumb-wrapper">
             <img class="render-thumb" src="\${item.annotatedRelPath}" alt="\${item.name}" loading="lazy" />
+            <div class="fidelity-badge \${fidelityClass}">\${fidelity}</div>
             <div class="thumb-badge \${badgeClass}">\${badgeText}</div>
           </div>
           <div class="render-info">
@@ -428,7 +455,7 @@ export function generateHtmlReport(report: ScanReport): string {
       sidebar.innerHTML = \`<h3 style="font-size: 15px; margin-bottom: 14px; font-weight: 700;">Findings (\${item.findings.length})</h3>\`;
 
       if (item.findings.length === 0) {
-        sidebar.innerHTML += '<div style="color: #34d399; font-size: 13px; padding: 12px; background: rgba(52, 211, 153, 0.1); border-radius: 8px;">✓ No visual defects detected in this viewport!</div>';
+        sidebar.innerHTML += '<div style="color: #34d399; font-size: 13px; padding: 12px; background: rgba(52, 211, 153, 0.1); border-radius: 8px;">✓ No visual defects detected in this target!</div>';
       } else {
         item.findings.forEach((f, idx) => {
           const card = document.createElement("div");
@@ -445,6 +472,11 @@ export function generateHtmlReport(report: ScanReport): string {
             \`).join("");
           }
 
+          let traceHtml = "";
+          if (f.trace && f.trace.length > 0) {
+            traceHtml = \`<div class="trace-box">📍 <strong>Reproduction:</strong> \${f.trace.length} step(s) recorded</div>\`;
+          }
+
           card.innerHTML = \`
             <div class="finding-header">
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -456,6 +488,7 @@ export function generateHtmlReport(report: ScanReport): string {
             <p class="finding-desc">\${f.description}</p>
             \${f.suggestedFix ? '<div style="font-size: 11px; color: #a5b4fc; margin-bottom: 8px;">💡 ' + f.suggestedFix + '</div>' : ''}
             \${elementsHtml}
+            \${traceHtml}
           \`;
           sidebar.appendChild(card);
         });

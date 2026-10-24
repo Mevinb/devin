@@ -24,7 +24,12 @@ export interface DOMElementStyles {
   lineHeight: string;
   color: string;
   backgroundColor: string;
+  outlineStyle?: string;
+  outlineWidth?: string;
+  boxShadow?: string;
+  borderWidth?: string;
 }
+
 
 export interface DOMElementMetrics {
   scrollWidth: number;

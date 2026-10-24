@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safe Area Defect Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f172a; color: white; font-family: sans-serif; }
+    /* Top notch collision */
+    .notch-bad-header {
+      position: absolute;
+      top: 5px;
+      left: 170px;
+      width: 100px;
+      height: 35px;
+      background: #ef4444;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="notch-bad-header" id="badNotchHeader">
+    CRITICAL
+  </div>
+  <div style="padding: 60px 20px;">
+    <h1>Safe Area Test Page</h1>
+    <p>The red box above sits right inside the hardware camera cutout / notch!</p>
+  </div>
+</body>
+</html>
