@@ -1,0 +1,123 @@
+{
+  "id": "scan-1792865368855",
+  "timestamp": "2026-10-24T18:09:28.855Z",
+  "target": "/home/mevlec/Data/devinv2/fixtures/overflow-horizontal",
+  "summary": {
+    "totalViewports": 1,
+    "totalFindings": 1,
+    "criticalFindings": 1,
+    "warningFindings": 0,
+    "infoFindings": 0,
+    "passedViewports": 0,
+    "failedViewports": 1,
+    "defectBreakdown": {
+      "horizontal-overflow": 1
+    },
+    "durationMs": 2112
+  },
+  "matrix": [
+    {
+      "renderId": "mobile-test_390x844@2x_portrait",
+      "name": "mobile-test",
+      "viewport": {
+        "name": "mobile-test",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "portrait",
+        "renderId": "mobile-test_390x844@2x_portrait"
+      },
+      "status": "fail",
+      "findingsCount": {
+        "critical": 1,
+        "warning": 0,
+        "info": 0,
+        "total": 1
+      },
+      "screenshotRelPath": "renders/mobile-test_390x844@2x_portrait/screenshot.png",
+      "annotatedRelPath": "renders/mobile-test_390x844@2x_portrait/annotated.png",
+      "findings": [
+        {
+          "id": "h-overflow-mobile-test_390x844@2x_portrait",
+          "type": "horizontal-overflow",
+          "severity": "critical",
+          "confidence": 0.98,
+          "sources": [
+            "heuristic"
+          ],
+          "bbox": {
+            "x": 20,
+            "y": 106,
+            "width": 1400,
+            "height": 115,
+            "top": 106,
+            "left": 20,
+            "right": 1420,
+            "bottom": 221
+          },
+          "elements": [
+            {
+              "id": "el-3",
+              "selector": "#wide-banner",
+              "tagName": "div",
+              "text": "1400px Wide Fixed Banner This banner overflows smaller screens, creating an unwanted horizontal scrollbar on mobile and "
+            },
+            {
+              "id": "el-4",
+              "selector": "div#wide-banner > h2",
+              "tagName": "h2",
+              "text": "1400px Wide Fixed Banner"
+            },
+            {
+              "id": "el-5",
+              "selector": "div#wide-banner > p",
+              "tagName": "p",
+              "text": "This banner overflows smaller screens, creating an unwanted horizontal scrollbar on mobile and tablet."
+            }
+          ],
+          "description": "Horizontal viewport overflow: page width (1420px) exceeds viewport width (390px) by 1030px. Primary culprits: #wide-banner, div#wide-banner > h2, div#wide-banner > p.",
+          "renderId": "mobile-test_390x844@2x_portrait",
+          "suggestedFix": "Apply `max-width: 100%`, `overflow-x: hidden`, or replace fixed widths with fluid percentages/clamp()."
+        }
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  ],
+  "config": {
+    "target": "/home/mevlec/Data/devinv2/fixtures/overflow-horizontal",
+    "viewports": [
+      {
+        "name": "mobile-test",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "portrait"
+      }
+    ],
+    "browser": "chromium",
+    "fullPage": true,
+    "waitUntil": "networkidle",
+    "extraWaitMs": 1000,
+    "concurrency": 4,
+    "devServer": {
+      "readyTimeoutMs": 30000
+    },
+    "vision": {
+      "enabled": true,
+      "model": "gpt-4o",
+      "maxImageDim": 1568
+    },
+    "output": {
+      "dir": "./pixelsentinel-output/test-overflow",
+      "clean": true,
+      "html": true,
+      "json": true,
+      "annotatedImages": true
+    }
+  }
+}

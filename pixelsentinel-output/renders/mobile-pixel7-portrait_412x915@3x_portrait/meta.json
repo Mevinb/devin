@@ -1,0 +1,27 @@
+{
+  "renderId": "mobile-pixel7-portrait_412x915@3x_portrait",
+  "viewport": {
+    "name": "mobile-pixel7-portrait",
+    "width": 412,
+    "height": 915,
+    "deviceScaleFactor": 3,
+    "isMobile": true,
+    "hasTouch": true,
+    "orientation": "portrait",
+    "deviceDescriptor": "Pixel 7",
+    "renderId": "mobile-pixel7-portrait_412x915@3x_portrait"
+  },
+  "url": "http://127.0.0.1:39741/",
+  "timestamp": "2026-10-24T18:08:54.065Z",
+  "consoleErrors": [],
+  "failedRequests": [],
+  "hasHorizontalScroll": false,
+  "screenshotPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/renders/mobile-pixel7-portrait_412x915@3x_portrait/screenshot.png",
+  "domPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/renders/mobile-pixel7-portrait_412x915@3x_portrait/dom.json",
+  "dimensions": {
+    "viewportWidth": 412,
+    "viewportHeight": 915,
+    "pageWidth": 412,
+    "pageHeight": 915
+  }
+}

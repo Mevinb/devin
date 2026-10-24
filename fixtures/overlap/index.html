@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Defect: Overlapping Elements</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      padding: 40px;
+      background: #111827;
+      color: white;
+    }
+    .wrapper {
+      position: relative;
+      height: 350px;
+    }
+    .primary-card {
+      position: absolute;
+      top: 50px;
+      left: 50px;
+      width: 320px;
+      height: 180px;
+      background: #ef4444;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .overlapping-card {
+      position: absolute;
+      top: 90px;
+      left: 120px;
+      width: 320px;
+      height: 180px;
+      background: #3b82f6;
+      padding: 20px;
+      border-radius: 8px;
+      /* Notice: deliberate collision with sibling card and text */
+    }
+  </style>
+</head>
+<body>
+  <h1>Defect Fixture: Unintended Overlap</h1>
+  <div class="wrapper">
+    <div id="card-alpha" class="primary-card">
+      <h2>Primary Header</h2>
+      <p>This text is colliding with the sibling card below it.</p>
+    </div>
+    <div id="card-beta" class="overlapping-card">
+      <h2>Overlapping Header</h2>
+      <p>This second card sits directly on top of the first card without spacing.</p>
+    </div>
+  </div>
+</body>
+</html>

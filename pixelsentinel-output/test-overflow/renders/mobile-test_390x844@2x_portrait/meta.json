@@ -1,0 +1,26 @@
+{
+  "renderId": "mobile-test_390x844@2x_portrait",
+  "viewport": {
+    "name": "mobile-test",
+    "width": 390,
+    "height": 844,
+    "deviceScaleFactor": 2,
+    "isMobile": true,
+    "hasTouch": true,
+    "orientation": "portrait",
+    "renderId": "mobile-test_390x844@2x_portrait"
+  },
+  "url": "http://127.0.0.1:46647/",
+  "timestamp": "2026-10-24T18:09:28.592Z",
+  "consoleErrors": [],
+  "failedRequests": [],
+  "hasHorizontalScroll": false,
+  "screenshotPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/test-overflow/renders/mobile-test_390x844@2x_portrait/screenshot.png",
+  "domPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/test-overflow/renders/mobile-test_390x844@2x_portrait/dom.json",
+  "dimensions": {
+    "viewportWidth": 390,
+    "viewportHeight": 844,
+    "pageWidth": 1420,
+    "pageHeight": 3074
+  }
+}

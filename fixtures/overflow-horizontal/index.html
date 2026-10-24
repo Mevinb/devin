@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Defect: Horizontal Viewport Overflow</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      padding: 20px;
+      background: #09090b;
+      color: white;
+    }
+    .wide-element {
+      width: 1400px; /* Massive fixed width causing horizontal scroll */
+      background: #7c3aed;
+      padding: 30px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Defect Fixture: Horizontal Overflow</h1>
+  <div class="wide-element" id="wide-banner">
+    <h2>1400px Wide Fixed Banner</h2>
+    <p>This banner overflows smaller screens, creating an unwanted horizontal scrollbar on mobile and tablet.</p>
+  </div>
+</body>
+</html>

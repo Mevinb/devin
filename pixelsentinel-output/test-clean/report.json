@@ -1,0 +1,78 @@
+{
+  "id": "scan-1792865366728",
+  "timestamp": "2026-10-24T18:09:26.728Z",
+  "target": "/home/mevlec/Data/devinv2/fixtures/clean",
+  "summary": {
+    "totalViewports": 1,
+    "totalFindings": 0,
+    "criticalFindings": 0,
+    "warningFindings": 0,
+    "infoFindings": 0,
+    "passedViewports": 1,
+    "failedViewports": 0,
+    "defectBreakdown": {},
+    "durationMs": 1694
+  },
+  "matrix": [
+    {
+      "renderId": "desktop-test_1280x720@1x_landscape",
+      "name": "desktop-test",
+      "viewport": {
+        "name": "desktop-test",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1,
+        "isMobile": false,
+        "hasTouch": false,
+        "orientation": "landscape",
+        "renderId": "desktop-test_1280x720@1x_landscape"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/desktop-test_1280x720@1x_landscape/screenshot.png",
+      "annotatedRelPath": "renders/desktop-test_1280x720@1x_landscape/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  ],
+  "config": {
+    "target": "/home/mevlec/Data/devinv2/fixtures/clean",
+    "viewports": [
+      {
+        "name": "desktop-test",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1,
+        "isMobile": false,
+        "hasTouch": false,
+        "orientation": "landscape"
+      }
+    ],
+    "browser": "chromium",
+    "fullPage": true,
+    "waitUntil": "networkidle",
+    "extraWaitMs": 1000,
+    "concurrency": 4,
+    "devServer": {
+      "readyTimeoutMs": 30000
+    },
+    "vision": {
+      "enabled": true,
+      "model": "gpt-4o",
+      "maxImageDim": 1568
+    },
+    "output": {
+      "dir": "./pixelsentinel-output/test-clean",
+      "clean": true,
+      "html": true,
+      "json": true,
+      "annotatedImages": true
+    }
+  }
+}

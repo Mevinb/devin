@@ -1,0 +1,333 @@
+{
+  "id": "scan-1792865334084",
+  "timestamp": "2026-10-24T18:08:54.084Z",
+  "target": "fixtures/clean",
+  "summary": {
+    "totalViewports": 11,
+    "totalFindings": 0,
+    "criticalFindings": 0,
+    "warningFindings": 0,
+    "infoFindings": 0,
+    "passedViewports": 11,
+    "failedViewports": 0,
+    "defectBreakdown": {},
+    "durationMs": 5277
+  },
+  "matrix": [
+    {
+      "renderId": "desktop-ultrawide_2560x1080@1x_landscape",
+      "name": "desktop-ultrawide",
+      "viewport": {
+        "name": "desktop-ultrawide",
+        "width": 2560,
+        "height": 1080,
+        "deviceScaleFactor": 1,
+        "isMobile": false,
+        "hasTouch": false,
+        "orientation": "landscape",
+        "renderId": "desktop-ultrawide_2560x1080@1x_landscape"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/desktop-ultrawide_2560x1080@1x_landscape/screenshot.png",
+      "annotatedRelPath": "renders/desktop-ultrawide_2560x1080@1x_landscape/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "desktop-fhd_1920x1080@1x_landscape",
+      "name": "desktop-fhd",
+      "viewport": {
+        "name": "desktop-fhd",
+        "width": 1920,
+        "height": 1080,
+        "deviceScaleFactor": 1,
+        "isMobile": false,
+        "hasTouch": false,
+        "orientation": "landscape",
+        "renderId": "desktop-fhd_1920x1080@1x_landscape"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/desktop-fhd_1920x1080@1x_landscape/screenshot.png",
+      "annotatedRelPath": "renders/desktop-fhd_1920x1080@1x_landscape/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "desktop-laptop_1366x768@1x_landscape",
+      "name": "desktop-laptop",
+      "viewport": {
+        "name": "desktop-laptop",
+        "width": 1366,
+        "height": 768,
+        "deviceScaleFactor": 1,
+        "isMobile": false,
+        "hasTouch": false,
+        "orientation": "landscape",
+        "renderId": "desktop-laptop_1366x768@1x_landscape"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/desktop-laptop_1366x768@1x_landscape/screenshot.png",
+      "annotatedRelPath": "renders/desktop-laptop_1366x768@1x_landscape/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "desktop-compact_1280x720@1x_landscape",
+      "name": "desktop-compact",
+      "viewport": {
+        "name": "desktop-compact",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1,
+        "isMobile": false,
+        "hasTouch": false,
+        "orientation": "landscape",
+        "renderId": "desktop-compact_1280x720@1x_landscape"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/desktop-compact_1280x720@1x_landscape/screenshot.png",
+      "annotatedRelPath": "renders/desktop-compact_1280x720@1x_landscape/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "tablet-ipad-portrait_820x1180@2x_portrait",
+      "name": "tablet-ipad-portrait",
+      "viewport": {
+        "name": "tablet-ipad-portrait",
+        "width": 820,
+        "height": 1180,
+        "deviceScaleFactor": 2,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "portrait",
+        "deviceDescriptor": "iPad (gen 7)",
+        "renderId": "tablet-ipad-portrait_820x1180@2x_portrait"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/tablet-ipad-portrait_820x1180@2x_portrait/screenshot.png",
+      "annotatedRelPath": "renders/tablet-ipad-portrait_820x1180@2x_portrait/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "tablet-ipad-landscape_1180x820@2x_landscape",
+      "name": "tablet-ipad-landscape",
+      "viewport": {
+        "name": "tablet-ipad-landscape",
+        "width": 1180,
+        "height": 820,
+        "deviceScaleFactor": 2,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "landscape",
+        "deviceDescriptor": "iPad (gen 7) landscape",
+        "renderId": "tablet-ipad-landscape_1180x820@2x_landscape"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/tablet-ipad-landscape_1180x820@2x_landscape/screenshot.png",
+      "annotatedRelPath": "renders/tablet-ipad-landscape_1180x820@2x_landscape/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "mobile-iphone14-portrait_390x844@3x_portrait",
+      "name": "mobile-iphone14-portrait",
+      "viewport": {
+        "name": "mobile-iphone14-portrait",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 3,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "portrait",
+        "deviceDescriptor": "iPhone 14",
+        "renderId": "mobile-iphone14-portrait_390x844@3x_portrait"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/mobile-iphone14-portrait_390x844@3x_portrait/screenshot.png",
+      "annotatedRelPath": "renders/mobile-iphone14-portrait_390x844@3x_portrait/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "mobile-iphone14-landscape_844x390@3x_landscape",
+      "name": "mobile-iphone14-landscape",
+      "viewport": {
+        "name": "mobile-iphone14-landscape",
+        "width": 844,
+        "height": 390,
+        "deviceScaleFactor": 3,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "landscape",
+        "deviceDescriptor": "iPhone 14 landscape",
+        "renderId": "mobile-iphone14-landscape_844x390@3x_landscape"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/mobile-iphone14-landscape_844x390@3x_landscape/screenshot.png",
+      "annotatedRelPath": "renders/mobile-iphone14-landscape_844x390@3x_landscape/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "mobile-pixel7-portrait_412x915@3x_portrait",
+      "name": "mobile-pixel7-portrait",
+      "viewport": {
+        "name": "mobile-pixel7-portrait",
+        "width": 412,
+        "height": 915,
+        "deviceScaleFactor": 3,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "portrait",
+        "deviceDescriptor": "Pixel 7",
+        "renderId": "mobile-pixel7-portrait_412x915@3x_portrait"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/mobile-pixel7-portrait_412x915@3x_portrait/screenshot.png",
+      "annotatedRelPath": "renders/mobile-pixel7-portrait_412x915@3x_portrait/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "mobile-pixel7-landscape_915x412@3x_landscape",
+      "name": "mobile-pixel7-landscape",
+      "viewport": {
+        "name": "mobile-pixel7-landscape",
+        "width": 915,
+        "height": 412,
+        "deviceScaleFactor": 3,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "landscape",
+        "deviceDescriptor": "Pixel 7 landscape",
+        "renderId": "mobile-pixel7-landscape_915x412@3x_landscape"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/mobile-pixel7-landscape_915x412@3x_landscape/screenshot.png",
+      "annotatedRelPath": "renders/mobile-pixel7-landscape_915x412@3x_landscape/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "renderId": "mobile-small-se_320x568@2x_portrait",
+      "name": "mobile-small-se",
+      "viewport": {
+        "name": "mobile-small-se",
+        "width": 320,
+        "height": 568,
+        "deviceScaleFactor": 2,
+        "isMobile": true,
+        "hasTouch": true,
+        "orientation": "portrait",
+        "renderId": "mobile-small-se_320x568@2x_portrait"
+      },
+      "status": "pass",
+      "findingsCount": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "screenshotRelPath": "renders/mobile-small-se_320x568@2x_portrait/screenshot.png",
+      "annotatedRelPath": "renders/mobile-small-se_320x568@2x_portrait/annotated.png",
+      "findings": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  ],
+  "config": {
+    "target": "fixtures/clean",
+    "browser": "chromium",
+    "fullPage": true,
+    "waitUntil": "networkidle",
+    "extraWaitMs": 1000,
+    "concurrency": 4,
+    "devServer": {
+      "readyTimeoutMs": 30000
+    },
+    "vision": {
+      "enabled": false,
+      "model": "gpt-4o",
+      "maxImageDim": 1568
+    },
+    "output": {
+      "dir": "./pixelsentinel-output",
+      "clean": true,
+      "html": true,
+      "json": true,
+      "annotatedImages": true
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "renderId": "tablet-ipad-portrait_820x1180@2x_portrait",
+  "viewport": {
+    "name": "tablet-ipad-portrait",
+    "width": 820,
+    "height": 1180,
+    "deviceScaleFactor": 2,
+    "isMobile": true,
+    "hasTouch": true,
+    "orientation": "portrait",
+    "deviceDescriptor": "iPad (gen 7)",
+    "renderId": "tablet-ipad-portrait_820x1180@2x_portrait"
+  },
+  "url": "http://127.0.0.1:39741/",
+  "timestamp": "2026-10-24T18:08:52.316Z",
+  "consoleErrors": [],
+  "failedRequests": [],
+  "hasHorizontalScroll": false,
+  "screenshotPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/renders/tablet-ipad-portrait_820x1180@2x_portrait/screenshot.png",
+  "domPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/renders/tablet-ipad-portrait_820x1180@2x_portrait/dom.json",
+  "dimensions": {
+    "viewportWidth": 820,
+    "viewportHeight": 1180,
+    "pageWidth": 820,
+    "pageHeight": 1180
+  }
+}

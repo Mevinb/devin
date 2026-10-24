@@ -1,0 +1,557 @@
+{
+  "document": {
+    "scrollWidth": 390,
+    "scrollHeight": 844,
+    "innerWidth": 390,
+    "innerHeight": 844,
+    "devicePixelRatio": 3
+  },
+  "elements": [
+    {
+      "id": "el-0",
+      "selector": "html",
+      "tagName": "html",
+      "text": "Clean Responsive Website This page follows fluid responsive guidelines and has no visual defects. Card One Fully fluid c",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 564,
+        "top": 0,
+        "left": 0,
+        "right": 390,
+        "bottom": 564
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 390,
+        "scrollHeight": 844,
+        "clientWidth": 390,
+        "clientHeight": 844
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": null
+    },
+    {
+      "id": "el-1",
+      "selector": "body",
+      "tagName": "body",
+      "text": "Clean Responsive Website This page follows fluid responsive guidelines and has no visual defects. Card One Fully fluid c",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 564,
+        "top": 0,
+        "left": 0,
+        "right": 390,
+        "bottom": 564
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "hidden auto",
+        "overflowX": "hidden",
+        "overflowY": "auto",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgb(15, 23, 42)"
+      },
+      "metrics": {
+        "scrollWidth": 390,
+        "scrollHeight": 564,
+        "clientWidth": 390,
+        "clientHeight": 564
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-0"
+    },
+    {
+      "id": "el-2",
+      "selector": "body > div.container",
+      "tagName": "div",
+      "text": "Clean Responsive Website This page follows fluid responsive guidelines and has no visual defects. Card One Fully fluid c",
+      "rect": {
+        "x": 24,
+        "y": 24,
+        "width": 342,
+        "height": 516,
+        "top": 24,
+        "left": 24,
+        "right": 366,
+        "bottom": 540
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 342,
+        "scrollHeight": 516,
+        "clientWidth": 342,
+        "clientHeight": 516
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-1"
+    },
+    {
+      "id": "el-3",
+      "selector": "body > div.container > header",
+      "tagName": "header",
+      "text": "Clean Responsive Website This page follows fluid responsive guidelines and has no visual defects.",
+      "rect": {
+        "x": 24,
+        "y": 24,
+        "width": 342,
+        "height": 98,
+        "top": 24,
+        "left": 24,
+        "right": 366,
+        "bottom": 122
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 342,
+        "scrollHeight": 98,
+        "clientWidth": 342,
+        "clientHeight": 98
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-2"
+    },
+    {
+      "id": "el-4",
+      "selector": "body > div.container > header > h1",
+      "tagName": "h1",
+      "text": "Clean Responsive Website",
+      "rect": {
+        "x": 24,
+        "y": 24,
+        "width": 342,
+        "height": 38,
+        "top": 24,
+        "left": 24,
+        "right": 366,
+        "bottom": 62
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "24px",
+        "lineHeight": "38.4px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 342,
+        "scrollHeight": 38,
+        "clientWidth": 342,
+        "clientHeight": 38
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-3"
+    },
+    {
+      "id": "el-5",
+      "selector": "body > div.container > header > p",
+      "tagName": "p",
+      "text": "This page follows fluid responsive guidelines and has no visual defects.",
+      "rect": {
+        "x": 24,
+        "y": 70,
+        "width": 342,
+        "height": 51,
+        "top": 70,
+        "left": 24,
+        "right": 366,
+        "bottom": 122
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 342,
+        "scrollHeight": 51,
+        "clientWidth": 342,
+        "clientHeight": 51
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-3"
+    },
+    {
+      "id": "el-6",
+      "selector": "body > div.container > div.grid",
+      "tagName": "div",
+      "text": "Card One Fully fluid content wrapping correctly across all screen sizes. Card Two Ample touch targets and clear spacing.",
+      "rect": {
+        "x": 24,
+        "y": 154,
+        "width": 342,
+        "height": 310,
+        "top": 154,
+        "left": 24,
+        "right": 366,
+        "bottom": 464
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "grid",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 342,
+        "scrollHeight": 310,
+        "clientWidth": 342,
+        "clientHeight": 310
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-2"
+    },
+    {
+      "id": "el-7",
+      "selector": "body > div.container > div.grid > div.card:nth-of-type(1)",
+      "tagName": "div",
+      "text": "Card One Fully fluid content wrapping correctly across all screen sizes.",
+      "rect": {
+        "x": 24,
+        "y": 154,
+        "width": 342,
+        "height": 145,
+        "top": 154,
+        "left": 24,
+        "right": 366,
+        "bottom": 299
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgb(30, 41, 59)"
+      },
+      "metrics": {
+        "scrollWidth": 340,
+        "scrollHeight": 143,
+        "clientWidth": 340,
+        "clientHeight": 143
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-6"
+    },
+    {
+      "id": "el-8",
+      "selector": "body > div.container > div.grid > div.card:nth-of-type(1) > h2",
+      "tagName": "h2",
+      "text": "Card One",
+      "rect": {
+        "x": 49,
+        "y": 179,
+        "width": 292,
+        "height": 32,
+        "top": 179,
+        "left": 49,
+        "right": 341,
+        "bottom": 211
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "20px",
+        "lineHeight": "32px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 292,
+        "scrollHeight": 32,
+        "clientWidth": 292,
+        "clientHeight": 32
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-7"
+    },
+    {
+      "id": "el-9",
+      "selector": "body > div.container > div.grid > div.card:nth-of-type(1) > p",
+      "tagName": "p",
+      "text": "Fully fluid content wrapping correctly across all screen sizes.",
+      "rect": {
+        "x": 49,
+        "y": 223,
+        "width": 292,
+        "height": 51,
+        "top": 223,
+        "left": 49,
+        "right": 341,
+        "bottom": 274
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 292,
+        "scrollHeight": 51,
+        "clientWidth": 292,
+        "clientHeight": 51
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-7"
+    },
+    {
+      "id": "el-10",
+      "selector": "body > div.container > div.grid > div.card:nth-of-type(2)",
+      "tagName": "div",
+      "text": "Card Two Ample touch targets and clear spacing.",
+      "rect": {
+        "x": 24,
+        "y": 319,
+        "width": 342,
+        "height": 145,
+        "top": 319,
+        "left": 24,
+        "right": 366,
+        "bottom": 464
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgb(30, 41, 59)"
+      },
+      "metrics": {
+        "scrollWidth": 340,
+        "scrollHeight": 143,
+        "clientWidth": 340,
+        "clientHeight": 143
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-6"
+    },
+    {
+      "id": "el-11",
+      "selector": "body > div.container > div.grid > div.card:nth-of-type(2) > h2",
+      "tagName": "h2",
+      "text": "Card Two",
+      "rect": {
+        "x": 49,
+        "y": 344,
+        "width": 292,
+        "height": 32,
+        "top": 344,
+        "left": 49,
+        "right": 341,
+        "bottom": 376
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "20px",
+        "lineHeight": "32px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 292,
+        "scrollHeight": 32,
+        "clientWidth": 292,
+        "clientHeight": 32
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-10"
+    },
+    {
+      "id": "el-12",
+      "selector": "body > div.container > div.grid > div.card:nth-of-type(2) > p",
+      "tagName": "p",
+      "text": "Ample touch targets and clear spacing.",
+      "rect": {
+        "x": 49,
+        "y": 388,
+        "width": 292,
+        "height": 51,
+        "top": 388,
+        "left": 49,
+        "right": 341,
+        "bottom": 439
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "25.6px",
+        "color": "rgb(248, 250, 252)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 292,
+        "scrollHeight": 51,
+        "clientWidth": 292,
+        "clientHeight": 51
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-10"
+    },
+    {
+      "id": "el-13",
+      "selector": "body > div.container > button.btn",
+      "tagName": "button",
+      "text": "Explore Features",
+      "rect": {
+        "x": 24,
+        "y": 496,
+        "width": 148,
+        "height": 44,
+        "top": 496,
+        "left": 24,
+        "right": 172,
+        "bottom": 540
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "inline-block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "13.3333px",
+        "lineHeight": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(99, 102, 241)"
+      },
+      "metrics": {
+        "scrollWidth": 148,
+        "scrollHeight": 44,
+        "clientWidth": 148,
+        "clientHeight": 44
+      },
+      "isInteractive": true,
+      "isClipped": false,
+      "parentId": "el-2"
+    }
+  ]
+}

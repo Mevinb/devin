@@ -1,0 +1,26 @@
+{
+  "renderId": "desktop-laptop_1366x768@1x_landscape",
+  "viewport": {
+    "name": "desktop-laptop",
+    "width": 1366,
+    "height": 768,
+    "deviceScaleFactor": 1,
+    "isMobile": false,
+    "hasTouch": false,
+    "orientation": "landscape",
+    "renderId": "desktop-laptop_1366x768@1x_landscape"
+  },
+  "url": "http://127.0.0.1:39741/",
+  "timestamp": "2026-10-24T18:08:50.522Z",
+  "consoleErrors": [],
+  "failedRequests": [],
+  "hasHorizontalScroll": false,
+  "screenshotPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/renders/desktop-laptop_1366x768@1x_landscape/screenshot.png",
+  "domPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/renders/desktop-laptop_1366x768@1x_landscape/dom.json",
+  "dimensions": {
+    "viewportWidth": 1366,
+    "viewportHeight": 768,
+    "pageWidth": 1366,
+    "pageHeight": 768
+  }
+}

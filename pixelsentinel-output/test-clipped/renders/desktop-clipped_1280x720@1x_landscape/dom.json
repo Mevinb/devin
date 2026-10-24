@@ -1,0 +1,206 @@
+{
+  "document": {
+    "scrollWidth": 1280,
+    "scrollHeight": 720,
+    "innerWidth": 1280,
+    "innerHeight": 720,
+    "devicePixelRatio": 1
+  },
+  "elements": [
+    {
+      "id": "el-0",
+      "selector": "html",
+      "tagName": "html",
+      "text": "Defect Fixture: Clipped Text This is a long paragraph that cannot fit in a 38px tall container with overflow:hidden and ",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 141,
+        "top": 0,
+        "left": 0,
+        "right": 1280,
+        "bottom": 141
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 1280,
+        "scrollHeight": 720,
+        "clientWidth": 1280,
+        "clientHeight": 720
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": null
+    },
+    {
+      "id": "el-1",
+      "selector": "body",
+      "tagName": "body",
+      "text": "Defect Fixture: Clipped Text This is a long paragraph that cannot fit in a 38px tall container with overflow:hidden and ",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 141,
+        "top": 0,
+        "left": 0,
+        "right": 1280,
+        "bottom": 141
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(24, 24, 27)"
+      },
+      "metrics": {
+        "scrollWidth": 1280,
+        "scrollHeight": 141,
+        "clientWidth": 1280,
+        "clientHeight": 141
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-0"
+    },
+    {
+      "id": "el-2",
+      "selector": "body > h1",
+      "tagName": "h1",
+      "text": "Defect Fixture: Clipped Text",
+      "rect": {
+        "x": 30,
+        "y": 30,
+        "width": 1220,
+        "height": 43,
+        "top": 30,
+        "left": 30,
+        "right": 1250,
+        "bottom": 73
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "32px",
+        "lineHeight": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 1220,
+        "scrollHeight": 43,
+        "clientWidth": 1220,
+        "clientHeight": 43
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-1"
+    },
+    {
+      "id": "el-3",
+      "selector": "#clipped-container",
+      "tagName": "div",
+      "text": "This is a long paragraph that cannot fit in a 38px tall container with overflow:hidden and gets brutally chopped off mid",
+      "rect": {
+        "x": 30,
+        "y": 73,
+        "width": 250,
+        "height": 38,
+        "top": 73,
+        "left": 30,
+        "right": 280,
+        "bottom": 111
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "hidden",
+        "overflowX": "hidden",
+        "overflowY": "hidden",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(39, 39, 42)"
+      },
+      "metrics": {
+        "scrollWidth": 248,
+        "scrollHeight": 136,
+        "clientWidth": 248,
+        "clientHeight": 36
+      },
+      "isInteractive": false,
+      "isClipped": true,
+      "parentId": "el-1"
+    },
+    {
+      "id": "el-4",
+      "selector": "div#clipped-container > p",
+      "tagName": "p",
+      "text": "This is a long paragraph that cannot fit in a 38px tall container with overflow:hidden and gets brutally chopped off mid",
+      "rect": {
+        "x": 43,
+        "y": 82,
+        "width": 224,
+        "height": 120,
+        "top": 82,
+        "left": 43,
+        "right": 267,
+        "bottom": 202
+      },
+      "styles": {
+        "zIndex": 0,
+        "overflow": "visible",
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": 1,
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgba(0, 0, 0, 0)"
+      },
+      "metrics": {
+        "scrollWidth": 224,
+        "scrollHeight": 120,
+        "clientWidth": 224,
+        "clientHeight": 120
+      },
+      "isInteractive": false,
+      "isClipped": false,
+      "parentId": "el-3"
+    }
+  ]
+}

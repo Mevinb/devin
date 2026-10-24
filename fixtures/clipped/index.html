@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Defect: Clipped Text and Element</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      padding: 30px;
+      background: #18181b;
+      color: white;
+    }
+    .clipped-box {
+      width: 250px;
+      height: 38px; /* Too small for contents */
+      overflow: hidden;
+      background: #27272a;
+      border: 1px solid #ef4444;
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+    .clipped-box p {
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Defect Fixture: Clipped Text</h1>
+  <div class="clipped-box" id="clipped-container">
+    <p>This is a long paragraph that cannot fit in a 38px tall container with overflow:hidden and gets brutally chopped off midway.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "renderId": "mobile-pixel7-landscape_915x412@3x_landscape",
+  "viewport": {
+    "name": "mobile-pixel7-landscape",
+    "width": 915,
+    "height": 412,
+    "deviceScaleFactor": 3,
+    "isMobile": true,
+    "hasTouch": true,
+    "orientation": "landscape",
+    "deviceDescriptor": "Pixel 7 landscape",
+    "renderId": "mobile-pixel7-landscape_915x412@3x_landscape"
+  },
+  "url": "http://127.0.0.1:39741/",
+  "timestamp": "2026-10-24T18:08:54.065Z",
+  "consoleErrors": [],
+  "failedRequests": [],
+  "hasHorizontalScroll": false,
+  "screenshotPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/renders/mobile-pixel7-landscape_915x412@3x_landscape/screenshot.png",
+  "domPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/renders/mobile-pixel7-landscape_915x412@3x_landscape/dom.json",
+  "dimensions": {
+    "viewportWidth": 915,
+    "viewportHeight": 412,
+    "pageWidth": 915,
+    "pageHeight": 412
+  }
+}

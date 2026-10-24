@@ -1,0 +1,26 @@
+{
+  "renderId": "desktop-overlap_1280x720@1x_landscape",
+  "viewport": {
+    "name": "desktop-overlap",
+    "width": 1280,
+    "height": 720,
+    "deviceScaleFactor": 1,
+    "isMobile": false,
+    "hasTouch": false,
+    "orientation": "landscape",
+    "renderId": "desktop-overlap_1280x720@1x_landscape"
+  },
+  "url": "http://127.0.0.1:42579/",
+  "timestamp": "2026-10-24T18:09:30.504Z",
+  "consoleErrors": [],
+  "failedRequests": [],
+  "hasHorizontalScroll": false,
+  "screenshotPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/test-overlap/renders/desktop-overlap_1280x720@1x_landscape/screenshot.png",
+  "domPath": "/home/mevlec/Data/devinv2/pixelsentinel-output/test-overlap/renders/desktop-overlap_1280x720@1x_landscape/dom.json",
+  "dimensions": {
+    "viewportWidth": 1280,
+    "viewportHeight": 720,
+    "pageWidth": 1280,
+    "pageHeight": 720
+  }
+}
