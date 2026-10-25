@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { ScanReport } from "./types.js";
+import { REPORT_SCRIPT } from "./report-script.js";
 
 export function generateHtmlReport(report: ScanReport): string {
   const jsonReportString = JSON.stringify(report).replace(/</g, "\\u003c");
@@ -324,6 +325,43 @@ export function generateHtmlReport(report: ScanReport): string {
       cursor: pointer;
     }
     .close-btn:hover { color: white; }
+    .render-card { text-align: left; font: inherit; color: var(--text); }
+    .state-name { color: #b8baff; font-weight: 600; margin-top: 5px; }
+    .report-muted { color: var(--text-muted); font-size: 12px; margin: 8px 0; overflow-wrap: anywhere; }
+    .report-notice { padding: 12px; border: 1px solid #806431; color: #fde68a; border-radius: 7px; margin: 12px 0; font-size: 13px; overflow-wrap: anywhere; }
+    .report-error { border-color: #803a45; color: #fecaca; }
+    .usage-panel { margin: 24px 0; padding: 18px; border: 1px solid var(--card-border); border-radius: 10px; min-width: 0; }
+    .usage-table-wrap { overflow-x: auto; margin: 12px 0; }
+    .usage-panel table { border-collapse: collapse; width: 100%; text-align: left; font-size: 13px; }
+    .usage-panel th, .usage-panel td { padding: 10px; border-bottom: 1px solid var(--card-border); white-space: nowrap; }
+    .image-tabs { display: flex; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--card-border); }
+    .selector-box { width: 100%; margin: 8px 0; text-align: left; overflow-wrap: anywhere; }
+    .patch-detail { margin: 20px 0; padding: 16px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; }
+    .patch-detail summary, .verification-evidence summary { cursor: pointer; font-weight: 600; padding: 6px 0; overflow-wrap: anywhere; }
+    .patch-detail p { margin: 8px 0; }
+    .patch-detail a { color: #a5b4fc; }
+    .patch-code { background: #060911; border: 1px solid var(--card-border); border-radius: 5px; padding: 12px; overflow: auto; margin: 12px 0; font: 12px/1.6 monospace; white-space: pre; }
+    .apply-command { display: block; overflow-wrap: anywhere; margin: 12px 0; }
+    .verification-evidence { margin: 12px 0; }
+    .evidence-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .evidence-pair figure { min-width: 0; }
+    .evidence-pair img { max-width: 100%; max-height: 280px; object-fit: contain; }
+    .trace-box ol { margin-left: 16px; overflow-wrap: anywhere; }
+    #fixesPanel { margin-top: 28px; }
+    button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 3px; }
+    @media (max-width: 800px) {
+      .container { padding: 20px 12px; }
+      .filter-bar, .filter-tabs { flex-wrap: wrap; gap: 10px; }
+      .matrix-grid { grid-template-columns: minmax(0, 1fr); }
+      .modal-backdrop { padding: 8px; }
+      .modal-container { width: 100%; max-height: 95vh; height: 95vh; }
+      .modal-body { display: flex; flex-direction: column; overflow-y: auto; }
+      .viewer-pane { max-height: 40vh; min-height: 200px; flex-shrink: 0; }
+      .sidebar-pane { overflow-y: visible; }
+      .evidence-pair { grid-template-columns: 1fr; }
+      .modal-header h2 { overflow-wrap: anywhere; }
+    }
+
   </style>
 </head>
 <body>
@@ -363,6 +401,9 @@ export function generateHtmlReport(report: ScanReport): string {
       </div>
     </div>
 
+    <div id="reportWarnings"></div>
+    <section id="usagePanel" class="usage-panel" aria-label="AI usage and budget" hidden></section>
+
     <!-- Filters -->
     <div class="filter-bar">
       <div class="filter-tabs" id="filterTabs">
@@ -374,18 +415,20 @@ export function generateHtmlReport(report: ScanReport): string {
 
     <!-- Matrix Grid -->
     <div class="matrix-grid" id="matrixGrid"></div>
+    <section id="fixesPanel"></section>
   </div>
 
   <!-- Inspector Modal -->
   <div class="modal-backdrop" id="inspectorModal">
-    <div class="modal-container">
+    <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modal-header">
         <div>
           <h2 id="modalTitle" style="font-size: 18px; font-weight: 700;">Target Inspector</h2>
           <span id="modalSubtitle" style="font-size: 12px; color: var(--text-muted); font-family: monospace;"></span>
         </div>
-        <button class="close-btn" id="closeModal">&times;</button>
+        <button class="close-btn" id="closeModal" aria-label="Close inspector">&times;</button>
       </div>
+      <div id="imageTabs" class="image-tabs"></div>
       <div class="modal-body">
         <div class="viewer-pane">
           <img id="viewerImg" class="viewer-image" src="" alt="Annotated Viewport" />
@@ -396,127 +439,7 @@ export function generateHtmlReport(report: ScanReport): string {
   </div>
 
   <script id="report-data" type="application/json">${jsonReportString}</script>
-  <script>
-    const report = JSON.parse(document.getElementById("report-data").textContent);
-    let currentFilter = "all";
-
-    function renderMatrix() {
-      const grid = document.getElementById("matrixGrid");
-      grid.innerHTML = "";
-
-      const filtered = report.matrix.filter(item => {
-        if (currentFilter === "failed") return item.status === "fail";
-        if (currentFilter === "passed") return item.status === "pass";
-        return true;
-      });
-
-      if (filtered.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 48px; color: #94a3b8;">No targets match current filter.</div>';
-        return;
-      }
-
-      filtered.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "render-card";
-        card.onclick = () => openInspector(item);
-
-        const badgeClass = item.status === "pass" ? "badge-pass" : "badge-fail";
-        const badgeText = item.status === "pass" ? "✓ Pass" : "✕ " + item.findings.length + " Defects";
-
-        const fidelity = item.viewport?.fidelity || "approximate";
-        const fidelityClass = fidelity === "real" ? "fidelity-real" : fidelity === "webview" ? "fidelity-webview" : "fidelity-approx";
-
-        card.innerHTML = \`
-          <div class="render-thumb-wrapper">
-            <img class="render-thumb" src="\${item.annotatedRelPath}" alt="\${item.name}" loading="lazy" />
-            <div class="fidelity-badge \${fidelityClass}">\${fidelity}</div>
-            <div class="thumb-badge \${badgeClass}">\${badgeText}</div>
-          </div>
-          <div class="render-info">
-            <div class="render-title">\${item.name}</div>
-            <div class="render-specs">\${item.viewport.width}×\${item.viewport.height} @\${item.viewport.deviceScaleFactor}x • \${item.viewport.orientation}</div>
-            <div class="render-pills">
-              \${item.findingsCount.critical > 0 ? '<span class="pill pill-critical">' + item.findingsCount.critical + ' Critical</span>' : ''}
-              \${item.findingsCount.warning > 0 ? '<span class="pill pill-warning">' + item.findingsCount.warning + ' Warning</span>' : ''}
-              \${item.status === 'pass' ? '<span class="pill pill-pass">All Clean</span>' : ''}
-            </div>
-          </div>
-        \`;
-        grid.appendChild(card);
-      });
-    }
-
-    function openInspector(item) {
-      document.getElementById("modalTitle").textContent = item.name;
-      document.getElementById("modalSubtitle").textContent = \`\${item.viewport.width}x\${item.viewport.height} @\${item.viewport.deviceScaleFactor}x (\${item.viewport.orientation})\`;
-      document.getElementById("viewerImg").src = item.annotatedRelPath;
-
-      const sidebar = document.getElementById("findingsSidebar");
-      sidebar.innerHTML = \`<h3 style="font-size: 15px; margin-bottom: 14px; font-weight: 700;">Findings (\${item.findings.length})</h3>\`;
-
-      if (item.findings.length === 0) {
-        sidebar.innerHTML += '<div style="color: #34d399; font-size: 13px; padding: 12px; background: rgba(52, 211, 153, 0.1); border-radius: 8px;">✓ No visual defects detected in this target!</div>';
-      } else {
-        item.findings.forEach((f, idx) => {
-          const card = document.createElement("div");
-          card.className = "finding-card";
-          const severityColor = f.severity === "critical" ? "#ef4444" : f.severity === "warning" ? "#f59e0b" : "#3b82f6";
-          
-          let elementsHtml = "";
-          if (f.elements && f.elements.length > 0) {
-            elementsHtml = f.elements.map(el => \`
-              <div class="selector-box" title="Click to copy selector" onclick="navigator.clipboard.writeText('\${el.selector}'); alert('Selector copied to clipboard!');">
-                <span>\${el.selector}</span>
-                <span style="font-size: 10px; color: #64748b;">COPY</span>
-              </div>
-            \`).join("");
-          }
-
-          let traceHtml = "";
-          if (f.trace && f.trace.length > 0) {
-            traceHtml = \`<div class="trace-box">📍 <strong>Reproduction:</strong> \${f.trace.length} step(s) recorded</div>\`;
-          }
-
-          card.innerHTML = \`
-            <div class="finding-header">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="finding-num" style="background: \${severityColor}">\${idx + 1}</span>
-                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: \${severityColor}">\${f.type}</span>
-              </div>
-              <span style="font-size: 11px; color: #64748b;">\${Math.round(f.confidence * 100)}% conf</span>
-            </div>
-            <p class="finding-desc">\${f.description}</p>
-            \${f.suggestedFix ? '<div style="font-size: 11px; color: #a5b4fc; margin-bottom: 8px;">💡 ' + f.suggestedFix + '</div>' : ''}
-            \${elementsHtml}
-            \${traceHtml}
-          \`;
-          sidebar.appendChild(card);
-        });
-      }
-
-      document.getElementById("inspectorModal").classList.add("open");
-    }
-
-    document.getElementById("closeModal").onclick = () => {
-      document.getElementById("inspectorModal").classList.remove("open");
-    };
-
-    document.getElementById("inspectorModal").onclick = (e) => {
-      if (e.target.id === "inspectorModal") {
-        document.getElementById("inspectorModal").classList.remove("open");
-      }
-    };
-
-    document.getElementById("filterTabs").addEventListener("click", (e) => {
-      if (e.target.classList.contains("filter-tab")) {
-        document.querySelectorAll(".filter-tab").forEach(t => t.classList.remove("active"));
-        e.target.classList.add("active");
-        currentFilter = e.target.dataset.filter;
-        renderMatrix();
-      }
-    });
-
-    renderMatrix();
+  <script>${REPORT_SCRIPT}
   </script>
 </body>
 </html>`;

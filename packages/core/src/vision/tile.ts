@@ -14,6 +14,7 @@ export async function processAndTileScreenshot(
   imageBuffer: Buffer,
   maxDimension: number = 1568
 ): Promise<ImageTile[]> {
+  if (!Number.isInteger(maxDimension) || maxDimension < 1) throw new Error("Maximum image dimension must be a positive integer");
   const metadata = await sharp(imageBuffer).metadata();
   const width = metadata.width || 1280;
   const height = metadata.height || 800;
@@ -32,28 +33,11 @@ export async function processAndTileScreenshot(
     ];
   }
 
-  // If width is extremely large, downscale preserving aspect ratio
-  if (width > maxDimension && height <= maxDimension) {
-    const resized = await sharp(imageBuffer)
-      .resize({ width: maxDimension, fit: "inside" })
-      .png()
-      .toBuffer();
-    return [
-      {
-        index: 0,
-        buffer: resized,
-        offsetY: 0,
-        tileHeight: height,
-        totalWidth: width,
-        totalHeight: height
-      }
-    ];
-  }
-
-  // Tall screenshot: slice into overlapping vertical tiles
+  // Retain original-image coordinates while limiting both sent dimensions.
   const tiles: ImageTile[] = [];
-  const overlap = 150; // 150px vertical overlap so border defects aren't cut
-  const sliceHeight = maxDimension;
+  const scale = Math.min(1, maxDimension / width);
+  const sliceHeight = Math.max(1, Math.floor(maxDimension / scale));
+  const overlap = Math.min(Math.floor(sliceHeight / 4), Math.ceil(150 / scale));
 
   let currentY = 0;
   let tileIndex = 0;
@@ -69,6 +53,7 @@ export async function processAndTileScreenshot(
         width: width,
         height: actualSliceHeight
       })
+      .resize({ width: maxDimension, height: maxDimension, fit: "inside", withoutEnlargement: true })
       .png()
       .toBuffer();
 

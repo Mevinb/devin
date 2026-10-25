@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
-import type { DOMSnapshot } from "../capture/types.js";
+import type { DOMElementSnapshot, DOMSnapshot } from "../capture/types.js";
+
+export function isDialogContainer(element: DOMElementSnapshot): boolean {
+  return element.tagName === "dialog" || ["dialog", "alertdialog"].includes(element.role ?? "") || element.ariaModal === true ||
+    (/modal|dialog/i.test(element.selector) && ["fixed", "absolute"].includes(element.styles.position));
+}
 
 export function computeStateFingerprint(domSnapshot: DOMSnapshot, url: string): {
   fingerprint: string;
@@ -19,17 +24,30 @@ export function computeStateFingerprint(domSnapshot: DOMSnapshot, url: string): 
   }
 
   // Detect open dialogs, modals, drawers
-  const hasModal = visibleElements.some(
-    (el) =>
-      el.tagName === "dialog" ||
-      el.selector.includes("modal") ||
-      el.selector.includes("dialog") ||
-      el.styles.zIndex > 50
-  );
+  const hasModal = visibleElements.some(isDialogContainer);
 
-  // Detect key headings and modal titles
-  const headings = visibleElements
-    .filter((el) => el.tagName.match(/^h[1-3]$/) || el.selector.includes("title"))
+  // Detect key headings and modal titles. Headings inside <header>/<nav> (site branding) don't describe
+  // the state, so content headings win; a visible modal's title wins over everything.
+  const byId = new Map(visibleElements.map((el) => [el.id, el]));
+  const inChrome = (el: (typeof visibleElements)[number]) => {
+    for (let p = el.parentId ? byId.get(el.parentId) : undefined; p; p = p.parentId ? byId.get(p.parentId) : undefined) {
+      if (p.tagName === "header" || p.tagName === "nav" || p.selector.includes("topbar")) return true;
+    }
+    return false;
+  };
+  const inModal = (el: (typeof visibleElements)[number]) => {
+    for (let p: (typeof visibleElements)[number] | undefined = el; p; p = p.parentId ? byId.get(p.parentId) : undefined) {
+      if (isDialogContainer(p)) return true;
+    }
+    return false;
+  };
+  const headingEls = visibleElements.filter((el) => el.tagName.match(/^h[1-3]$/) || el.selector.includes("title"));
+  const ranked = [
+    ...headingEls.filter(inModal),
+    ...headingEls.filter((el) => !inModal(el) && !inChrome(el)),
+    ...headingEls.filter((el) => !inModal(el) && inChrome(el))
+  ];
+  const headings = ranked
     .map((el) => el.text.trim())
     .filter(Boolean)
     .slice(0, 3);

@@ -2,19 +2,19 @@ import OpenAI from "openai";
 import type { DOMSnapshot } from "../capture/types.js";
 import { MockExplorationAgent } from "./mock-agent.js";
 import type { AgentAction, ExploreConfig } from "./types.js";
+import { EXPLORATION_TOOLS, decodeAgentToolCall } from "./agent-tools.js";
+import { ActionPolicy, DESTRUCTIVE_LABELS } from "./policy.js";
+import { isBudgetError, RunBudget } from "../budget.js";
 
-const DEFAULT_DISALLOWED_KEYWORDS = [
-  "delete",
-  "remove",
-  "drop database",
-  "checkout",
-  "purchase",
-  "buy now",
-  "pay now",
-  "credit card",
-  "sign out",
-  "logout"
-];
+export interface DecideOptions {
+  /** Recovery mode during replay: describe the state the agent must reach. */
+  goal?: string;
+  /** Recent actions, newest last. */
+  history?: string[];
+  isTV?: boolean;
+  /** A distinct replay step can need the same menu recovery again. */
+  recoveryId?: string;
+}
 
 export class ExplorationAgent {
   private openai: OpenAI | null = null;
@@ -22,21 +22,51 @@ export class ExplorationAgent {
   private visitedFingerprints = new Set<string>();
   private stepCount = 0;
   private initialOrigin: string | null = null;
+  /** Number of LLM requests made (cost meter). */
+  llmCalls = 0;
+  tokensUsed = 0;
 
-  constructor(private readonly config: Partial<ExploreConfig> = {}) {
+  constructor(private readonly config: Partial<ExploreConfig> = {}, private readonly budget = new RunBudget()) {
     this.mockAgent = new MockExplorationAgent(config);
     const apiKey = process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
+    if (apiKey && !config.useMockAgent) {
+      this.openai = new OpenAI({ apiKey, maxRetries: 0, timeout: 30000 });
     }
+  }
+
+  get usesLLM(): boolean {
+    return this.openai !== null;
+  }
+
+  private disallowed(): string[] {
+    return [...DESTRUCTIVE_LABELS, ...(this.config.disallowedKeywords || [])];
+  }
+
+  /** Attach a stable selector and enforce the destructive-action deny list in code, not just the prompt. */
+  private finalize(action: AgentAction, domSnapshot: DOMSnapshot): AgentAction | null {
+    if ((action.type === "tap" || action.type === "type") && action.elementId && !action.selector) {
+      const el = domSnapshot.elements.find((e) => e.id === action.elementId);
+      if (!el) return null;
+      action.selector = el.selector;
+    }
+    if (action.type === "tap" && !this.config.allowDestructive) {
+      const el = domSnapshot.elements.find((e) => e.selector === action.selector || e.id === action.elementId);
+      const text = (el?.text || "").toLowerCase();
+      if (DESTRUCTIVE_LABELS.some((word) => new RegExp(`\\b${word}\\b`, "i").test(text)) ||
+        this.config.disallowedKeywords?.some((word) => word && text.includes(word.toLowerCase()))) return null;
+    }
+    if (action.type === "navigate" && this.initialOrigin && !new ActionPolicy(this.initialOrigin, this.config).allowsUrl(action.url)) return null;
+    return action;
   }
 
   async decideNextAction(
     domSnapshot: DOMSnapshot,
     screenshotBase64: string,
     currentUrl: string,
-    currentFingerprint: string
+    currentFingerprint: string,
+    options: DecideOptions = {}
   ): Promise<AgentAction> {
+    this.budget.assertActive();
     const maxSteps = this.config.maxSteps || 20;
     const maxStates = this.config.maxStates || 10;
 
@@ -48,20 +78,24 @@ export class ExplorationAgent {
       }
     }
 
-    this.visitedFingerprints.add(currentFingerprint);
+    if (!options.goal) {
+      this.visitedFingerprints.add(currentFingerprint);
 
-    if (this.stepCount >= maxSteps) {
-      return { type: "done", reason: `Reached maximum step limit (${maxSteps})` };
+      if (this.stepCount >= maxSteps) {
+        return { type: "done", reason: `Reached maximum step limit (${maxSteps})` };
+      }
+
+      if (this.visitedFingerprints.size >= maxStates) {
+        return { type: "done", reason: `Reached maximum state limit (${maxStates})` };
+      }
+
+      this.stepCount++;
     }
-
-    if (this.visitedFingerprints.size >= maxStates) {
-      return { type: "done", reason: `Reached maximum state limit (${maxStates})` };
-    }
-
-    this.stepCount++;
 
     if (!this.openai) {
-      return this.mockAgent.decideNextAction(domSnapshot, currentUrl, currentFingerprint);
+      return options.goal
+        ? this.mockAgent.recoverToward(domSnapshot, options.goal, options.recoveryId)
+        : this.mockAgent.decideNextAction(domSnapshot, currentUrl, currentFingerprint);
     }
 
     // Build compact element manifest of clickable/interactive elements
@@ -80,118 +114,43 @@ export class ExplorationAgent {
         location: `[x:${el.rect.x}, y:${el.rect.y}, ${el.rect.width}x${el.rect.height}]`
       }));
 
-    const disallowed = [
-      ...DEFAULT_DISALLOWED_KEYWORDS,
-      ...(this.config.disallowedKeywords || [])
-    ];
+    const disallowed = this.disallowed();
 
-    const systemPrompt = `You are PixelSentinel's autonomous visual QA exploration agent.
-Your objective is to navigate the web application to uncover as many distinct visual states as possible (modals, dialogs, drawers, dropdowns, forms, tab switches, error states).
+    const systemPrompt =
+      this.config.systemPrompt ||
+      `You are PixelSentinel's autonomous visual QA exploration agent, operating a real ${options.isTV ? "Android TV (D-pad remote: use press_key with ArrowUp/ArrowDown/ArrowLeft/ArrowRight/Enter)" : "device"}.
+Your objective is to navigate the web application to uncover as many distinct visual states as possible (modals, dialogs, drawers, dropdowns, menus, forms, validation errors, tab switches, error states).
 
 CRITICAL GUARDRAILS:
-1. Do NOT click destructive actions containing: ${disallowed.join(", ")}.
-2. Stay within origin: ${this.initialOrigin || "current host"}.
+1. ${this.config.allowDestructive ? "Destructive actions were explicitly allowed for this test." : `Do NOT click destructive actions containing: ${disallowed.join(", ")}.`}
+2. ${this.config.allowExternalNavigation ? "External HTTP(S) navigation was explicitly allowed." : `Stay within these allowed origins: ${[this.initialOrigin || "current host", ...(this.config.allowedOrigins ?? [])].join(", ")}.`}
 3. Prioritize exploring unvisited interactive UI elements.
 4. If you have explored the current view, either open another UI state (e.g. click modal/tab) or scroll to view off-screen content.
-5. If all reachable states have been explored, call done.`;
+5. Use test data for forms (e.g. ${this.config.testCredentials ? JSON.stringify(this.config.testCredentials) : "test@example.com / Password123!"}).
+6. If all reachable states have been explored, call done.`;
 
-    const userPrompt = `Current URL: ${currentUrl}
+    const userPrompt = `${options.goal ? `RECOVERY GOAL: on this device the recorded step failed. Take the single action most likely to reach: ${options.goal}\n\n` : ""}Current URL: ${currentUrl}
 State Fingerprint: ${currentFingerprint}
 Explored States Count: ${this.visitedFingerprints.size} / ${maxStates}
 Current Step: ${this.stepCount} / ${maxSteps}
-
+Shared budget: ${JSON.stringify({ actions: this.budget.snapshot().actions, tokens: this.budget.snapshot().totalTokens, limits: this.budget.config })}
+${options.history?.length ? `Recent actions:\n${options.history.slice(-6).join("\n")}\n` : ""}
 Interactive Elements on screen:
 ${JSON.stringify(interactiveElements, null, 2)}
 
-Select the next single action to discover new states.`;
+Select the next single action${options.goal ? " toward the goal" : " to discover new states"}.`;
 
-    const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
-      {
-        type: "function",
-        function: {
-          name: "tap",
-          description: "Tap or click on an interactive element by its ID or coordinate",
-          parameters: {
-            type: "object",
-            properties: {
-              elementId: { type: "string", description: "The element id (e.g. 'el-4')" },
-              description: { type: "string", description: "Why you chose this element" }
-            },
-            required: ["elementId"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "type_text",
-          description: "Enter text into an input or textarea element",
-          parameters: {
-            type: "object",
-            properties: {
-              elementId: { type: "string", description: "The input element id" },
-              text: { type: "string", description: "The text to type" }
-            },
-            required: ["elementId", "text"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "scroll",
-          description: "Scroll the viewport in a direction",
-          parameters: {
-            type: "object",
-            properties: {
-              direction: { type: "string", enum: ["up", "down", "left", "right"] },
-              amount: { type: "number", description: "Pixels to scroll, e.g. 400" }
-            },
-            required: ["direction"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "press_key",
-          description: "Press a keyboard key (e.g. 'Escape', 'Enter', 'Tab')",
-          parameters: {
-            type: "object",
-            properties: {
-              key: { type: "string" }
-            },
-            required: ["key"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "back",
-          description: "Navigate back to the previous page or state",
-          parameters: { type: "object", properties: {} }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "done",
-          description: "Conclude the exploration when all reachable states are covered",
-          parameters: {
-            type: "object",
-            properties: {
-              reason: { type: "string" }
-            },
-            required: ["reason"]
-          }
-        }
-      }
-    ];
+    const fallback = () =>
+      options.goal
+        ? this.mockAgent.recoverToward(domSnapshot, options.goal, options.recoveryId)
+        : this.mockAgent.decideNextAction(domSnapshot, currentUrl, currentFingerprint);
 
     try {
-      const response = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+      const model = this.config.model || process.env.OPENAI_MODEL || "gpt-4o";
+      const response = await this.budget.request(options.goal ? "recovery" : "agent", model, 300, (requestOptions) => {
+        this.llmCalls++;
+        return this.openai!.chat.completions.create({
+        model,
         temperature: 0.1,
         max_tokens: 300,
         messages: [
@@ -210,51 +169,26 @@ Select the next single action to discover new states.`;
             ]
           }
         ],
-        tools,
+        tools: EXPLORATION_TOOLS,
         tool_choice: "auto"
+      }, requestOptions);
       });
 
+      this.tokensUsed += response.usage?.total_tokens ?? 0;
       const message = response.choices[0]?.message;
-      if (message?.tool_calls && message.tool_calls.length > 0) {
-        const call = message.tool_calls[0];
-        const args = JSON.parse(call.function.arguments || "{}");
-
-        switch (call.function.name) {
-          case "tap":
-            return {
-              type: "tap",
-              elementId: args.elementId,
-              description: args.description || "LLM tapped element"
-            };
-          case "type_text":
-            return {
-              type: "type",
-              elementId: args.elementId,
-              text: args.text || "test"
-            };
-          case "scroll":
-            return {
-              type: "scroll",
-              direction: args.direction || "down",
-              amount: args.amount || 400
-            };
-          case "press_key":
-            return {
-              type: "press_key",
-              key: args.key || "Escape"
-            };
-          case "back":
-            return { type: "back" };
-          case "done":
-            return { type: "done", reason: args.reason || "Exploration complete" };
-        }
+      const call = message?.tool_calls?.[0];
+      if (call && call.type === "function") {
+        const action = decodeAgentToolCall(call.function.name, call.function.arguments || "{}");
+        const finalized = action && this.finalize(action, domSnapshot);
+        if (finalized) return finalized;
       }
 
-      // Fallback if no tool was called
-      return this.mockAgent.decideNextAction(domSnapshot, currentUrl, currentFingerprint);
-    } catch {
-      // Fallback to mock agent on OpenAI API failure / timeout
-      return this.mockAgent.decideNextAction(domSnapshot, currentUrl, currentFingerprint);
+      // No usable / allowed tool call
+      return fallback();
+    } catch (error) {
+      if (isBudgetError(error)) throw error;
+      // Fallback to deterministic agent on OpenAI API failure / timeout
+      return fallback();
     }
   }
 }

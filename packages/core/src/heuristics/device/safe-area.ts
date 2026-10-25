@@ -27,6 +27,10 @@ export function detectSafeAreaIntrusions(capture: CaptureResult): Finding[] {
   const { domSnapshot, renderConfig } = capture;
   const target = getDeviceTarget(capture);
   if (!target) return [];
+  // In a normal browser tab the page never draws under the status bar / cutout. Only pages that opt in
+  // with `viewport-fit=cover` (or run standalone/fullscreen) can collide with system UI.
+  const doc = domSnapshot.document;
+  if (doc.viewportFitCover === false && !doc.standalone) return [];
 
   const findings: Finding[] = [];
   const { safeAreaInsets, notchRect } = target;

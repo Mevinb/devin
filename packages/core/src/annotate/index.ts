@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import sharp from "sharp";
 import type { Finding } from "../heuristics/types.js";
+import type { ScreenshotGeometry } from "../capture/types.js";
 
 const SEVERITY_COLORS = {
   critical: { stroke: "#ef4444", fill: "rgba(239, 68, 68, 0.15)", text: "#ffffff" },
@@ -11,13 +12,20 @@ const SEVERITY_COLORS = {
 export async function annotateScreenshot(
   imageBuffer: Buffer,
   findings: Finding[],
-  outputPath?: string
+  outputPath?: string,
+  /** CSS width of the captured page; boxes are scaled to the screenshot's device pixels. */
+  geometry?: number | ScreenshotGeometry
 ): Promise<Buffer> {
   const metadata = await sharp(imageBuffer).metadata();
   const width = metadata.width || 1280;
   const height = metadata.height || 800;
+  const cssWidth = typeof geometry === "number" ? geometry : geometry?.cssWidth;
+  const scaleX = cssWidth && cssWidth > 0 ? width / cssWidth : 1;
+  const scaleY = typeof geometry === "object" ? height / geometry.cssHeight : scaleX;
+  const originX = typeof geometry === "object" ? geometry.originX : 0;
+  const originY = typeof geometry === "object" ? geometry.originY : 0;
 
-  if (findings.length === 0) {
+  if (!findings.some((f) => f.bbox.width > 0 && f.bbox.height > 0)) {
     if (outputPath) {
       await fs.writeFile(outputPath, imageBuffer);
     }
@@ -26,9 +34,13 @@ export async function annotateScreenshot(
 
   // Build SVG overlay
   const svgElements = findings.map((finding, idx) => {
+    if (finding.bbox.width <= 0 || finding.bbox.height <= 0) return "";
     const num = idx + 1;
     const colors = SEVERITY_COLORS[finding.severity] || SEVERITY_COLORS.warning;
-    const { x, y, width: boxWidth, height: boxHeight } = finding.bbox;
+    const x = (finding.bbox.x - originX) * scaleX;
+    const y = (finding.bbox.y - originY) * scaleY;
+    const boxWidth = finding.bbox.width * scaleX;
+    const boxHeight = finding.bbox.height * scaleY;
 
     // Badge styling
     const badgeSize = 24;

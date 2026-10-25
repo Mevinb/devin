@@ -18,6 +18,7 @@
   "dependencies": {
     "@pixelsentinel/core": "workspace:*",
     "openai": "^4.86.1",
+    "playwright": "^1.50.1",
     "pino": "^9.6.0"
   },
   "devDependencies": {

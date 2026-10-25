@@ -1,4 +1,5 @@
 import type { RenderConfig } from "../config/schema.js";
+import type { DeviceTarget, TargetModifiers } from "../runtime/types.js";
 
 export interface DOMRectJSON {
   x: number;
@@ -49,6 +50,10 @@ export interface DOMElementSnapshot {
   isInteractive: boolean;
   isClipped: boolean;
   parentId: string | null;
+  role?: string;
+  ariaModal?: boolean;
+  /** Component source from framework dev builds (React _debugSource, Vue __file, Svelte __svelte_meta). */
+  source?: { file: string; line: number };
 }
 
 export interface DOMSnapshot {
@@ -58,6 +63,13 @@ export interface DOMSnapshot {
     innerWidth: number;
     innerHeight: number;
     devicePixelRatio: number;
+    /** Device width in CSS px; mobile browsers widen innerWidth to fit overflowing content. */
+    screenWidth?: number;
+    scrollX?: number;
+    scrollY?: number;
+    /** Page opted into drawing under system bars / cutouts (`<meta viewport-fit=cover>`). */
+    viewportFitCover?: boolean;
+    standalone?: boolean;
   };
   elements: DOMElementSnapshot[];
 }
@@ -77,6 +89,8 @@ export interface CaptureMetadata {
   failedRequests: FailedRequest[];
   hasHorizontalScroll: boolean;
   screenshotPath: string;
+  /** Image bounds in document CSS coordinates, independent of device pixel ratio. */
+  screenshotGeometry?: ScreenshotGeometry;
   domPath: string;
   dimensions: {
     viewportWidth: number;
@@ -84,10 +98,54 @@ export interface CaptureMetadata {
     pageWidth: number;
     pageHeight: number;
   };
+  /** Uncaught exceptions / unhandled rejections raised by the page. */
+  pageErrors?: string[];
+  /** Full device screen (status bar, soft keyboard, cutouts) on real devices. */
+  deviceScreenshotPath?: string;
+  /** Real soft-keyboard measurements taken by focusing inputs on a real device. */
+  keyboardProbes?: KeyboardProbe[];
+  device?: {
+    id: string;
+    name: string;
+    runtime: string;
+    fidelity: "real" | "webview" | "approximate";
+    browser?: string;
+    orientation?: "portrait" | "landscape";
+    modifiers?: TargetModifiers;
+    info?: Record<string, unknown>;
+  };
+  warnings?: string[];
 }
 
+export interface ScreenshotGeometry {
+  pixelWidth: number;
+  pixelHeight: number;
+  cssWidth: number;
+  cssHeight: number;
+  originX: number;
+  originY: number;
+  fullPage: boolean;
+}
+
+export interface KeyboardProbe {
+  selector: string;
+  elementId: string;
+  /** Input rect bottom in viewport CSS px after focusing. */
+  inputBottom: number;
+  /** Bottom of the visible area (visualViewport) while the IME is shown. */
+  visibleBottom: number;
+  keyboardShown: boolean;
+  focused?: boolean;
+  attempts?: number;
+  stable?: boolean;
+  obscured: boolean;
+  screenshotPath?: string;
+}
+
+export type CaptureRenderConfig = RenderConfig & { deviceTarget?: DeviceTarget };
+
 export interface CaptureResult {
-  renderConfig: RenderConfig;
+  renderConfig: CaptureRenderConfig;
   screenshotBuffer: Buffer;
   screenshotPath: string;
   domSnapshot: DOMSnapshot;

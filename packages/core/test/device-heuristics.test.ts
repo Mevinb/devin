@@ -4,7 +4,7 @@ import { scan } from "../src/scanner.js";
 import { MockVisionProvider } from "../src/vision/mock-provider.js";
 import { BUILTIN_DEVICES } from "../src/runtime/registry.js";
 
-describe("Real-Device Heuristics Detection", () => {
+describe("Device heuristics on labelled viewport approximations", () => {
   const fixturesDir = path.resolve(__dirname, "../../../fixtures/device");
   const mockVision = new MockVisionProvider([]);
 
@@ -36,6 +36,7 @@ describe("Real-Device Heuristics Detection", () => {
       (f) => f.type === "safe-area-intrusion"
     );
     expect(hasNotchIntrusion).toBe(true);
+    expect(report.matrix[0].device?.fidelity).toBe("approximate");
   }, 30000);
 
   it("detects soft keyboard obstruction on bottom chat input", async () => {
@@ -96,6 +97,7 @@ describe("Real-Device Heuristics Detection", () => {
       (f) => f.type === "hinge-overlap"
     );
     expect(hasHingeOverlap).toBe(true);
+    expect(report.matrix[0].device?.fidelity).toBe("approximate");
   }, 30000);
 
   it("detects TV 5% overscan safety boundary violations", async () => {

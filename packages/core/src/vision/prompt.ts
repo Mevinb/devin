@@ -1,5 +1,6 @@
 import type { DOMSnapshot } from "../capture/types.js";
 import type { ImageTile } from "./tile.js";
+import type { RenderContext } from "./types.js";
 
 export const VISION_SYSTEM_PROMPT = `
 You are PixelSentinel, an expert automated visual QA analyst specialized in responsive web design defect detection.
@@ -83,14 +84,19 @@ export const OPENAI_VISION_RESPONSE_SCHEMA = {
 
 export function buildDOMGroundingHints(
   domSnapshot: DOMSnapshot,
-  tile: ImageTile
+  tile: ImageTile,
+  context?: Pick<RenderContext, "imageWidth" | "imageHeight" | "originX" | "originY">
 ): string {
-  const tileTop = tile.offsetY;
-  const tileBottom = tile.offsetY + tile.tileHeight;
+  const scaleX = context ? tile.totalWidth / context.imageWidth : 1;
+  const scaleY = context ? tile.totalHeight / context.imageHeight : 1;
+  const originX = context?.originX ?? 0, originY = context?.originY ?? 0;
+  const tileTop = tile.offsetY / scaleY + originY;
+  const tileBottom = (tile.offsetY + tile.tileHeight) / scaleY + originY;
 
   // Filter elements that fall within this tile
   const visibleInTile = domSnapshot.elements.filter((el) => {
-    return el.rect.bottom >= tileTop && el.rect.top <= tileBottom && el.rect.width > 0;
+    return el.rect.bottom > tileTop && el.rect.top < tileBottom && el.rect.width > 0 &&
+      el.rect.right > originX && el.rect.left < originX + tile.totalWidth / scaleX;
   });
 
   // Prioritize interactive elements and substantive text
@@ -101,10 +107,11 @@ export function buildDOMGroundingHints(
   if (prioritized.length === 0) return "";
 
   const hints = prioritized.map((el) => {
-    const normXmin = (el.rect.left / tile.totalWidth).toFixed(2);
-    const normXmax = (el.rect.right / tile.totalWidth).toFixed(2);
-    const normYmin = ((el.rect.top - tileTop) / tile.tileHeight).toFixed(2);
-    const normYmax = ((el.rect.bottom - tileTop) / tile.tileHeight).toFixed(2);
+    const norm = (value: number) => Math.max(0, Math.min(1, value)).toFixed(2);
+    const normXmin = norm((el.rect.left - originX) * scaleX / tile.totalWidth);
+    const normXmax = norm((el.rect.right - originX) * scaleX / tile.totalWidth);
+    const normYmin = norm((el.rect.top - tileTop) * scaleY / tile.tileHeight);
+    const normYmax = norm((el.rect.bottom - tileTop) * scaleY / tile.tileHeight);
 
     return `- <${el.tagName}> "${el.text.slice(0, 30)}" at [y:${normYmin}-${normYmax}, x:${normXmin}-${normXmax}] (${el.selector})`;
   });

@@ -1,299 +1,111 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
 import { defaultAdbClient, runDevicesDoctor } from "@pixelsentinel/android";
-import {
-  globalDeviceRegistry,
-  PilotThenReplayScheduler,
-  scan,
-  type ScanConfigInput,
-  type ScanReport
-} from "@pixelsentinel/core";
+import { DeviceRegistry, ExploreConfigSchema, globalDeviceRegistry, resolveScanConfig, type ScanConfigInput } from "@pixelsentinel/core";
+import { ScanJobManager } from "./jobs.js";
+export * from "./jobs.js";
 
-export interface ScanJob {
-  id: string;
-  target: string;
-  status: "queued" | "running" | "completed" | "failed";
-  progress: {
-    step: string;
-    completed: number;
-    total: number;
-    detail?: string;
-  };
-  report?: ScanReport;
-  error?: string;
-  createdAt: string;
-}
+export function createServer(options: { outputDir?: string; logger?: boolean; webDistPath?: string } = {}) {
+  const server = Fastify({ logger: options.logger ?? true });
+  server.register(cors, { origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    try { callback(null, ["127.0.0.1", "localhost", "[::1]"].includes(new URL(origin).hostname)); }
+    catch { callback(null, false); }
+  } });
+  const outputDir = path.resolve(options.outputDir ?? "./pixelsentinel-output");
+  fs.mkdirSync(outputDir, { recursive: true });
+  const manager = new ScanJobManager(outputDir);
+  server.addHook("onClose", async () => { await manager.close(); });
+  server.register(fastifyStatic, { root: outputDir, prefix: "/artifacts/", decorateReply: false });
+  const webDistPath = options.webDistPath ?? fileURLToPath(new URL("../../web/dist", import.meta.url));
+  if (fs.existsSync(webDistPath)) server.register(fastifyStatic, { root: webDistPath, prefix: "/", decorateReply: false });
 
-const jobs = new Map<string, ScanJob>();
-
-export function createServer(options: { outputDir?: string } = {}) {
-  const server = Fastify({
-    logger: true
-  });
-
-  server.register(cors, {
-    origin: true
-  });
-
-  const outputDir = path.resolve(process.cwd(), options.outputDir || "./pixelsentinel-output");
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
-
-  // Serve generated artifacts (screenshots, reports)
-  server.register(fastifyStatic, {
-    root: outputDir,
-    prefix: "/artifacts/",
-    decorateReply: false
-  });
-
-  // Serve built web dashboard if available
-  const webDistPath = path.resolve(process.cwd(), "packages/web/dist");
-  if (fs.existsSync(webDistPath)) {
-    server.register(fastifyStatic, {
-      root: webDistPath,
-      prefix: "/",
-      decorateReply: false
-    });
-  }
-
-  // API Endpoints
-  server.get("/api/health", async () => {
-    return { status: "ok", timestamp: new Date().toISOString() };
-  });
-
-  server.get("/api/devices/doctor", async () => {
-    return runDevicesDoctor();
-  });
-
-  server.get("/api/devices", async () => {
-    const builtins = globalDeviceRegistry.listBuiltins();
-    const adbDevices = await defaultAdbClient.listDevices();
-    return {
-      devices: builtins,
-      adbDevices
-    };
-  });
-
-  server.get("/api/fixes", async () => {
-    const proposalsFile = path.join(outputDir, "fixes", "proposals.json");
-    if (fs.existsSync(proposalsFile)) {
-      try {
-        const data = fs.readFileSync(proposalsFile, "utf8");
-        return JSON.parse(data);
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-
-  server.get("/api/scans", async () => {
-    return Array.from(jobs.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  });
-
+  server.get("/api/health", async () => ({ status: "ok", timestamp: new Date().toISOString() }));
+  server.get("/api/devices/doctor", async () => runDevicesDoctor());
+  server.get("/api/devices", async () => ({
+    devices: globalDeviceRegistry.listBuiltins(), adbDevices: await defaultAdbClient.listDevices(),
+    sessions: manager.list().filter((job) => job.status === "running").flatMap((job) => Object.values(job.fleet))
+  }));
+  server.get("/api/scans", async () => manager.list());
   server.get("/api/scans/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const job = jobs.get(id);
-    if (!job) {
-      reply.status(404).send({ error: "Scan job not found" });
-      return;
-    }
-    return job;
+    const job = manager.get((req.params as { id: string }).id);
+    return job ?? reply.code(404).send({ error: "Scan job not found" });
+  });
+  server.get("/api/scans/:id/report", async (req, reply) => {
+    const job = manager.get((req.params as { id: string }).id);
+    if (!job) return reply.code(404).send({ error: "Scan job not found" });
+    return job.report ?? reply.code(409).send({ error: "Scan has no completed report", status: job.status });
+  });
+  server.get("/api/scans/:id/fixes", async (req, reply) => {
+    const job = manager.get((req.params as { id: string }).id);
+    return job ? job.report?.fixes ?? [] : reply.code(404).send({ error: "Scan job not found" });
+  });
+  server.get("/api/fixes", async (req, reply) => {
+    const { scanId } = req.query as { scanId?: string };
+    const job = scanId ? manager.get(scanId) : manager.list().find((item) => item.report);
+    if (scanId && !job) return reply.code(404).send({ error: "Scan job not found" });
+    return job?.report?.fixes ?? [];
   });
 
-  server.get("/api/scans/:id/report", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const job = jobs.get(id);
-    if (!job) {
-      reply.status(404).send({ error: "Scan job not found" });
-      return;
+  server.get("/api/scans/:id/events", async (req, reply) => {
+    const job = manager.get((req.params as { id: string }).id);
+    if (!job) return reply.code(404).send({ error: "Scan job not found" });
+    const lastId = req.headers["last-event-id"] ? Number(req.headers["last-event-id"]) : 0;
+    if (!Number.isSafeInteger(lastId) || lastId < 0) return reply.code(400).send({ error: "Invalid Last-Event-ID" });
+    reply.hijack();
+    reply.raw.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache, no-transform", "connection": "keep-alive", "x-accel-buffering": "no" });
+    reply.raw.write(`event: snapshot\ndata: ${JSON.stringify(job)}\n\n`);
+    for (const event of job.events.filter((e) => e.id > lastId)) {
+      reply.raw.write(`id: ${event.id}\nevent: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
     }
-    if (!job.report) {
-      reply.status(400).send({ error: "Scan not yet completed" });
-      return;
-    }
-    return job.report;
+    if (job.status === "completed" || job.status === "failed") { reply.raw.end(); return; }
+    const unsubscribe = manager.subscribe(job.id, (event) => {
+      reply.raw.write(`id: ${event.id}\nevent: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+      if (event.type === "status" && (job.status === "completed" || job.status === "failed")) reply.raw.end();
+    });
+    const heartbeat = setInterval(() => { reply.raw.write(": heartbeat\n\n"); }, 15000);
+    heartbeat.unref();
+    reply.raw.on("close", () => { clearInterval(heartbeat); unsubscribe(); });
   });
 
   server.post("/api/scans", async (req, reply) => {
-    const body = req.body as Partial<ScanConfigInput> & { explore?: boolean };
-    if (!body || !body.target) {
-      reply.status(400).send({ error: "Target URL or path is required" });
-      return;
+    const body = req.body as Record<string, unknown> | null;
+    if (!body || Array.isArray(body) || typeof body.target !== "string" || !body.target.trim()) {
+      return reply.code(400).send({ error: "Target URL or path is required" });
     }
-
-    const target = body.target;
-    const jobId = `job-${Date.now()}`;
-    const job: ScanJob = {
-      id: jobId,
-      target,
-      status: "queued",
-      progress: {
-        step: "queued",
-        completed: 0,
-        total: 1,
-        detail: "Queued for execution"
-      },
-      createdAt: new Date().toISOString()
-    };
-
-    jobs.set(jobId, job);
-
-    // Launch scan in background
-    (async () => {
-      try {
-        job.status = "running";
-
-        if (body.explore) {
-          job.progress = {
-            step: "exploring",
-            completed: 1,
-            total: 3,
-            detail: "Running pilot-then-replay autonomous exploration..."
-          };
-
-          const scheduler = new PilotThenReplayScheduler();
-          const targets = [
-            globalDeviceRegistry.resolveTarget("chromium:desktop-1080p"),
-            globalDeviceRegistry.resolveTarget("android:pixel-8"),
-            globalDeviceRegistry.resolveTarget("webkit:iphone-15-pro")
-          ];
-
-          const exploreResult = await scheduler.run(
-            target,
-            targets,
-            { maxSteps: 15 },
-            outputDir
-          );
-
-          // Convert exploreResult to ScanReport format
-          const matrix = exploreResult.matrix.map((entry) => ({
-            renderId: `${entry.deviceId}-${entry.stateId}`,
-            name: `${entry.deviceName} — ${entry.stateName}`,
-            viewport: {
-              ...entry.captureResult.renderConfig,
-              renderId: `${entry.deviceId}-${entry.stateId}`,
-              fidelity: entry.fidelity
-            },
-            status: (entry.findings.length === 0 ? "pass" : "fail") as "pass" | "fail",
-            findingsCount: {
-              critical: entry.findings.filter((f) => f.severity === "critical").length,
-              warning: entry.findings.filter((f) => f.severity === "warning").length,
-              info: entry.findings.filter((f) => f.severity === "info").length,
-              total: entry.findings.length
-            },
-            screenshotRelPath: path.relative(outputDir, entry.captureResult.screenshotPath),
-            annotatedRelPath: path.relative(outputDir, entry.captureResult.screenshotPath),
-            findings: entry.findings,
-            consoleErrors: [],
-            failedRequests: []
-          }));
-
-          const scanReport: ScanReport = {
-            id: `explore-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            target,
-            summary: {
-              totalViewports: matrix.length,
-              totalFindings: exploreResult.allFindings.length,
-              criticalFindings: exploreResult.allFindings.filter((f) => f.severity === "critical").length,
-              warningFindings: exploreResult.allFindings.filter((f) => f.severity === "warning").length,
-              infoFindings: exploreResult.allFindings.filter((f) => f.severity === "info").length,
-              passedViewports: matrix.filter((m) => m.status === "pass").length,
-              failedViewports: matrix.filter((m) => m.status === "fail").length,
-              defectBreakdown: {},
-              durationMs: 5000
-            },
-            matrix,
-            config: {
-              target,
-              browser: "chromium",
-              fullPage: true,
-              waitUntil: "networkidle",
-              extraWaitMs: 500,
-              concurrency: 4,
-              vision: { enabled: false, model: "gpt-4o", maxImageDim: 1568 },
-              output: {
-                dir: outputDir,
-                clean: false,
-                html: true,
-                json: true,
-                annotatedImages: true
-              }
-            }
-          };
-
-
-          job.status = "completed";
-          job.report = scanReport;
-          job.progress = {
-            step: "completed",
-            completed: matrix.length,
-            total: matrix.length,
-            detail: "Autonomous exploration completed"
-          };
-          return;
-        }
-
-        const scanReport = await scan(
-          {
-            ...body,
-            output: {
-              ...(body.output || {}),
-              dir: outputDir
-            }
-          },
-          {
-            onProgress: (step, completed, total, detail) => {
-              job.progress = { step, completed, total, detail };
-            }
-          }
-        );
-
-        job.status = "completed";
-        job.report = scanReport;
-        job.progress = {
-          step: "completed",
-          completed: scanReport.summary.totalViewports,
-          total: scanReport.summary.totalViewports,
-          detail: "Scan completed"
-        };
-      } catch (err: unknown) {
-        job.status = "failed";
-        job.error = err instanceof Error ? err.message : String(err);
-      }
-    })();
-
-    reply.status(202).send({ jobId, status: "queued" });
+    if (body.explore !== undefined && typeof body.explore !== "boolean" && (typeof body.explore !== "object" || body.explore === null)) {
+      return reply.code(400).send({ error: "explore must be a boolean or an exploration configuration" });
+    }
+    if (body.proposeFixes !== undefined && typeof body.proposeFixes !== "boolean") return reply.code(400).send({ error: "proposeFixes must be a boolean" });
+    const exploreConfig = ExploreConfigSchema.safeParse(body.exploreConfig ?? (typeof body.explore === "object" ? body.explore : {}));
+    if (!exploreConfig.success) return reply.code(400).send({ error: "Invalid exploration configuration", details: exploreConfig.error.issues });
+    if (body.proposeFixes && /^https?:\/\//i.test(body.target)) return reply.code(400).send({ error: "Fix proposals require a local source project" });
+    try {
+      const config = await resolveScanConfig({ ...body, target: body.target.trim() } as Partial<ScanConfigInput>);
+      const registry = new DeviceRegistry();
+      for (const device of config.devices ?? []) registry.resolveTarget(device);
+      const job = manager.enqueue(config, {
+        ...(body.explore ? { explore: exploreConfig.data } : {}), proposeFixes: body.proposeFixes === true
+      });
+      return reply.code(202).send({ jobId: job.id, status: "queued", artifactBaseUrl: job.artifactBaseUrl });
+    } catch (err) {
+      return reply.code(400).send({ error: err instanceof Error ? err.message : String(err) });
+    }
   });
-
   return server;
 }
 
-export async function startServer(port: number = 3000, openBrowser: boolean = false): Promise<void> {
+export async function startServer(port = 3000, openBrowser = false): Promise<void> {
   const server = createServer();
-  try {
-    await server.listen({ port, host: "0.0.0.0" });
-    const url = `http://localhost:${port}`;
-    console.log(`\n🚀 PixelSentinel Dashboard running at: ${url}\n`);
-
-    if (openBrowser) {
-      const open = (await import("open")).default;
-      await open(url).catch(() => {});
-    }
-  } catch (err) {
-    server.log.error(err);
-    process.exit(1);
-  }
+  const url = await server.listen({ port, host: "127.0.0.1" });
+  console.log(`\nPixelSentinel Dashboard running at: ${url}\n`);
+  if (openBrowser) await (await import("open")).default(url).catch(() => {});
 }
-
-if (process.argv[1] && process.argv[1].endsWith("index.js")) {
-  const port = parseInt(process.env.PORT || "3000", 10);
-  startServer(port);
+if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
+  (await import("dotenv")).config();
+  startServer(Number(process.env.PORT ?? "3000")).catch((err) => { console.error(err); process.exitCode = 1; });
 }

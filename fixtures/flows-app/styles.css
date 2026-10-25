@@ -1,0 +1,144 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #1f2937;
+  padding-bottom: 72px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #111827;
+  color: #fff;
+}
+
+.brand {
+  font-size: 20px;
+  margin: 0;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: 1px solid #6b7280;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.main-nav {
+  display: flex;
+  gap: 16px;
+}
+
+.nav-link {
+  color: #e5e7eb;
+  text-decoration: none;
+  padding: 8px;
+}
+
+.view {
+  display: none;
+  padding: 24px 16px;
+}
+
+.view.active {
+  display: block;
+}
+
+.cta {
+  background: #4f46e5;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 16px;
+}
+
+.cta.secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.icon-btn {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 12px;
+}
+
+.price-card {
+  width: 480px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 320px;
+}
+
+.chat-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px;
+  background: #f3f4f6;
+  border-top: 1px solid #d1d5db;
+}
+
+.chat-bar input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+}
+
+@media (max-width: 700px) {
+  .menu-toggle {
+    display: block;
+  }
+
+  .main-nav {
+    display: none;
+    position: absolute;
+    top: 56px;
+    right: 8px;
+    flex-direction: column;
+    background: #111827;
+    padding: 8px;
+    border-radius: 8px;
+    z-index: 50;
+  }
+
+  .main-nav.open {
+    display: flex;
+  }
+}

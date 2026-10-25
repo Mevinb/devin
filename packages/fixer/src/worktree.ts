@@ -1,10 +1,11 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { promisify } from "node:util";
 
-const execAsync = promisify(exec);
+const execAsync = promisify(execFile);
 
 export interface IsolatedWorktree {
   id: string;
@@ -18,13 +19,37 @@ export class WorktreeManager {
 
   async createWorktree(): Promise<IsolatedWorktree> {
     const id = `ps-${crypto.randomUUID().slice(0, 8)}`;
-    const baseDir = path.join(this.repoRoot, ".pixelsentinel", "worktrees");
-    await fs.mkdir(baseDir, { recursive: true });
-
-    const worktreePath = path.join(baseDir, id);
-
-    // Create detached worktree at HEAD
-    await execAsync(`git worktree add -d "${worktreePath}" HEAD`, { cwd: this.repoRoot });
+    // Keep verification files outside the app's file watchers and source directory.
+    const sandboxDir = await fs.mkdtemp(path.join(os.tmpdir(), `${id}-`));
+    const metadata = path.join(sandboxDir, "repository.git");
+    const worktreePath = path.join(sandboxDir, "tree");
+    try {
+      // Private metadata keeps the source .git untouched (also works in read-only checkouts).
+      await execAsync("git", ["clone", "--bare", "--shared", "--", this.repoRoot, metadata]);
+      await execAsync("git", [`--git-dir=${metadata}`, "worktree", "add", "--detach", worktreePath, "HEAD"]);
+      // Verify the current source, including dirty/untracked files, rather than stale HEAD contents.
+      const { stdout } = await execAsync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
+        cwd: this.repoRoot, maxBuffer: 20 * 1024 * 1024
+      });
+      for (const file of new Set(stdout.split("\0").filter(Boolean))) {
+        if (file.startsWith(".pixelsentinel/") || file.split("/").includes("node_modules")) continue;
+        const source = path.join(this.repoRoot, file);
+        const destination = path.join(worktreePath, file);
+        await fs.rm(destination, { force: true, recursive: true });
+        try {
+          const stat = await fs.lstat(source);
+          // External symlinks must never turn an isolated patch into a write to user source.
+          if (!stat.isFile()) continue;
+          await fs.mkdir(path.dirname(destination), { recursive: true });
+          await fs.copyFile(source, destination);
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+        }
+      }
+    } catch (err) {
+      await fs.rm(sandboxDir, { recursive: true, force: true });
+      throw err;
+    }
 
     return {
       id,
@@ -35,31 +60,22 @@ export class WorktreeManager {
         await fs.writeFile(patchFile, patchContent, "utf8");
 
         try {
-          // If the file exists in repo root but not yet in worktree (e.g. uncommitted fixture/source file), mirror it
-          const fileMatch = diff.match(/--- a\/([^\t\n\r]+)/) || diff.match(/\+\+\+ b\/([^\t\n\r]+)/);
-          if (fileMatch) {
-            const relFile = fileMatch[1].trim();
-            const srcInRepo = path.join(this.repoRoot, relFile);
-            const dstInWorktree = path.join(worktreePath, relFile);
-
-            try {
-              await fs.access(dstInWorktree);
-            } catch {
-              // Not present in HEAD, check if present in current working directory
-              try {
-                await fs.access(srcInRepo);
-                await fs.mkdir(path.dirname(dstInWorktree), { recursive: true });
-                await fs.copyFile(srcInRepo, dstInWorktree);
-              } catch {
-                // ignore
-              }
+          const { stdout } = await execAsync("git", ["apply", "--numstat", "-z", patchFile], { cwd: worktreePath });
+          const files = stdout.split("\0").filter(Boolean).map((entry) => entry.split("\t").slice(2).join("\t"));
+          if (!files.length) throw new Error("Patch does not change any files");
+          for (const file of files) {
+            if (!file || path.isAbsolute(file) || file.split(/[\\/]/).some((p) => p === ".." || p === ".git")) {
+              throw new Error(`Invalid patch path: ${file}`);
             }
+            // A proposal must map to a real source file, not a hallucinated filename.
+            const stat = await fs.lstat(path.join(worktreePath, file));
+            if (!stat.isFile()) throw new Error(`Patch path is not a source file: ${file}`);
           }
 
           // 1. Dry run check
-          await execAsync(`git apply --check --ignore-whitespace "${patchFile}"`, { cwd: worktreePath });
+          await execAsync("git", ["apply", "--check", patchFile], { cwd: worktreePath });
           // 2. Apply patch in worktree
-          await execAsync(`git apply --ignore-whitespace "${patchFile}"`, { cwd: worktreePath });
+          await execAsync("git", ["apply", patchFile], { cwd: worktreePath });
           await fs.unlink(patchFile).catch(() => {});
           return { success: true };
         } catch (err: unknown) {
@@ -69,14 +85,7 @@ export class WorktreeManager {
       },
 
       cleanup: async () => {
-        try {
-          await execAsync(`git worktree remove --force "${worktreePath}"`, {
-            cwd: this.repoRoot
-          });
-        } catch {
-          // ignore
-        }
-        await fs.rm(worktreePath, { recursive: true, force: true }).catch(() => {});
+        await fs.rm(sandboxDir, { recursive: true, force: true });
       }
     };
   }

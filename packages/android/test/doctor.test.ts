@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { runDevicesDoctor } from "../src/doctor.js";
 import { getAvdProfile, listAvdProfiles } from "../src/profiles.js";
 
@@ -19,6 +22,17 @@ describe("Android Fleet Management and Diagnostics", () => {
     const adbCheck = report.checks.find((c) => c.name.includes("ADB"));
     expect(adbCheck).toBeDefined();
     expect(adbCheck?.status).toBe("ok");
+  });
+
+  it("does not claim emulation readiness with a missing SDK and missing AVDs", async () => {
+    const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ps-doctor-empty-"));
+    vi.stubEnv("ANDROID_HOME", path.join(temporary, "missing-sdk"));
+    vi.stubEnv("ANDROID_AVD_HOME", path.join(temporary, "missing-avds"));
+    try {
+      const report = await runDevicesDoctor();
+      expect(report.canEmulate).toBe(false);
+      expect(report.checks.some((check) => check.category === "android-sdk" && check.status === "error")).toBe(true);
+    } finally { vi.unstubAllEnvs(); await fs.rm(temporary, { recursive: true, force: true }); }
   });
 
   it("lists standard AVD profiles for mobile, foldable, tablet, and TV", () => {

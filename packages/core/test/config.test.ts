@@ -47,4 +47,16 @@ describe("Config & Matrix Expansion", () => {
     expect(renders.length).toBe(1);
     expect(renders[0].renderId).toBe("custom-mobile_375x667@2x_portrait");
   });
+
+  it("preserves custom runtime settings and modifiers through configuration validation", () => {
+    const device = {
+      id: "custom:tablet", name: "Custom tablet", runtime: "android", engine: "chromium",
+      viewport: { width: 800, height: 600 }, fidelity: "webview",
+      android: { avd: "test-tablet", profile: "tablet", browser: "webview-shell", input: "dpad" },
+      modifiers: { orientation: "landscape", fontScale: 1.3, darkMode: true }, isAutomotive: true
+    };
+    const config = ScanConfigSchema.parse({ target: ".", devices: [device], devServer: { port: 0 } });
+    expect(config.devices?.[0]).toMatchObject(device);
+    expect(config.devServer?.port).toBe(0);
+  });
 });

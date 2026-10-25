@@ -122,6 +122,24 @@ export function extractDOMSnapshotInBrowser(): DOMSnapshot {
     const id = `el-${counter++}`;
     elementToId.set(el, id);
 
+    // Framework dev-mode source locations (only present in development builds)
+    let source: { file: string; line: number } | undefined;
+    const anyEl = el as unknown as Record<string, any>;
+    for (const key of Object.keys(anyEl)) {
+      if (key.startsWith("__reactFiber$")) {
+        const fiber = anyEl[key];
+        const ds = fiber?._debugSource || fiber?._debugOwner?._debugSource;
+        if (ds?.fileName) source = { file: ds.fileName, line: ds.lineNumber || 1 };
+        break;
+      }
+    }
+    if (!source && anyEl.__vueParentComponent?.type?.__file) {
+      source = { file: anyEl.__vueParentComponent.type.__file, line: 1 };
+    }
+    if (!source && anyEl.__svelte_meta?.loc?.file) {
+      source = { file: anyEl.__svelte_meta.loc.file, line: (anyEl.__svelte_meta.loc.line || 0) + 1 };
+    }
+
     let parentId: string | null = null;
     let p = el.parentElement;
     while (p) {
@@ -174,7 +192,10 @@ export function extractDOMSnapshotInBrowser(): DOMSnapshot {
       },
       isInteractive,
       isClipped,
-      parentId
+      parentId,
+      ...(el.getAttribute("role") ? { role: el.getAttribute("role")! } : {}),
+      ...(el.getAttribute("aria-modal") === "true" ? { ariaModal: true } : {}),
+      ...(source ? { source } : {})
     });
   }
 
@@ -198,7 +219,14 @@ export function extractDOMSnapshotInBrowser(): DOMSnapshot {
       scrollHeight: Math.round(docScrollHeight),
       innerWidth: window.innerWidth,
       innerHeight: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio || 1
+      devicePixelRatio: window.devicePixelRatio || 1,
+      screenWidth: window.screen?.width || window.innerWidth,
+      scrollX: Math.round(scrollX),
+      scrollY: Math.round(scrollY),
+      viewportFitCover: /viewport-fit\s*=\s*cover/i.test(
+        document.querySelector('meta[name="viewport"]')?.getAttribute("content") || ""
+      ),
+      standalone: window.matchMedia?.("(display-mode: standalone), (display-mode: fullscreen)").matches ?? false
     },
     elements
   };

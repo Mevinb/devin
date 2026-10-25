@@ -7,6 +7,7 @@ import type {
 
 export class MockVisionProvider implements VisionProvider {
   name = "mock";
+  readonly offline = true;
   private customFindings: VisionFinding[];
 
   constructor(customFindings: VisionFinding[] = []) {

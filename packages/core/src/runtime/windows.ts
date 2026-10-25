@@ -1,165 +1,141 @@
 import crypto from "node:crypto";
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
+import { chromium, firefox, type Browser, type BrowserContext, type Page } from "playwright";
+import { PlaywrightControl } from "./playwright.js";
+import { BrowserSlot } from "./browser-slot.js";
 import type {
   DeviceAvailability,
-  DeviceControl,
   DeviceRuntime,
   DeviceSession,
   DeviceTarget
 } from "./types.js";
+import { WindowsVm, readWindowsVmConfig } from "./windows/vm.js";
 
-export class WindowsControl implements DeviceControl {
-  constructor(
-    private readonly page: Page,
-    private readonly getTarget: () => DeviceTarget,
-    private readonly setTarget: (t: DeviceTarget) => void
-  ) {}
+export { PlaywrightControl as WindowsControl };
+export * from "./windows/vm.js";
 
-  async tap(x: number, y: number): Promise<void> {
-    await this.page.mouse.click(x, y);
-  }
-
-  async typeText(text: string): Promise<void> {
-    await this.page.keyboard.type(text);
-  }
-
-  async pressKey(key: string): Promise<void> {
-    await this.page.keyboard.press(key);
-  }
-
-  async scroll(
-    direction: "up" | "down" | "left" | "right",
-    amount = 300
-  ): Promise<void> {
-    await this.page.evaluate(
-      ({ dir, dist }) => {
-        const deltaX = dir === "left" ? -dist : dir === "right" ? dist : 0;
-        const deltaY = dir === "up" ? -dist : dir === "down" ? dist : 0;
-        window.scrollBy({ left: deltaX, top: deltaY, behavior: "instant" });
-      },
-      { dir: direction, dist: amount }
-    );
-  }
-
-  async rotate(): Promise<void> {
-    // Windows desktop typically does not rotate, but handle display orientation switch if requested
-  }
-
-  async setKeyboardVisible(): Promise<void> {
-    // Windows desktop has a physical keyboard by default
-  }
-
-  async back(): Promise<void> {
-    await this.page.goBack();
-  }
-
-  async captureScreenshot(): Promise<Buffer> {
-    return this.page.screenshot({ type: "png" });
-  }
-}
-
+/**
+ * Real Windows rendering via `playwright run-server` running inside a Windows host:
+ *  - PIXELSENTINEL_WINDOWS_ENDPOINT=ws://host:3100/  (any Windows machine / CI runner), or
+ *  - the local QEMU/KVM VM created with `pixelsentinel devices windows init`.
+ * Without either, falls back to approximate Linux Chromium and records a warning.
+ */
 export class WindowsRuntime implements DeviceRuntime {
   readonly name = "windows";
-  private browser: Browser | null = null;
-  private remoteUrl: string | null = process.env.PIXELSENTINEL_WINDOWS_CDP_URL || null;
+  private endpoint: string | null =
+    process.env.PIXELSENTINEL_WINDOWS_ENDPOINT || process.env.PIXELSENTINEL_WINDOWS_CDP_URL || null;
+  private vm: WindowsVm | null = null;
+  private remoteBrowsers = new Map<string, BrowserSlot>();
+  private fallbackBrowser = new BrowserSlot();
+  private generation = 0;
+  private assertGeneration(generation: number) { if (generation !== this.generation) throw new Error("Windows runtime shut down during launch"); }
 
   setRemoteUrl(url: string | null): void {
-    this.remoteUrl = url;
+    this.endpoint = url;
+  }
+
+  private async resolveEndpoint(generation: number): Promise<string | null> {
+    if (this.endpoint) return this.endpoint;
+    const cfg = readWindowsVmConfig();
+    if (!cfg?.provisioned) return null;
+    const vm = this.vm = new WindowsVm(cfg);
+    const endpoint = await vm.start();
+    if (generation !== this.generation) { await vm.stop(); this.assertGeneration(generation); }
+    this.endpoint = endpoint;
+    return this.endpoint;
   }
 
   async isAvailable(): Promise<DeviceAvailability> {
-    if (this.remoteUrl) {
-      try {
-        const browser = await chromium.connectOverCDP(this.remoteUrl, { timeout: 3000 });
-        await browser.close().catch(() => {});
-        return {
-          available: true,
-          details: { remoteEndpoint: this.remoteUrl, type: "remote-cdp" }
-        };
-      } catch (err: unknown) {
-        return {
-          available: false,
-          reason: `Remote Windows CDP endpoint unreachable: ${(err as Error).message}`
-        };
-      }
-    }
-
+    if (this.endpoint) return { available: true, details: { endpoint: this.endpoint } };
+    const cfg = readWindowsVmConfig();
+    if (cfg?.provisioned) return { available: true, details: { vm: true } };
     return {
-      available: true,
-      reason: "Local Windows desktop profile simulation (approximate fidelity)"
+      available: false,
+      reason:
+        "No Windows host configured (set PIXELSENTINEL_WINDOWS_ENDPOINT or run `pixelsentinel devices windows init --iso <win11.iso>`)"
     };
   }
 
+  private async remoteBrowser(endpoint: string, target: DeviceTarget): Promise<Browser> {
+    const browserName = target.windows?.browser ?? "msedge";
+    let slot = this.remoteBrowsers.get(browserName);
+    if (!slot) { slot = new BrowserSlot(); this.remoteBrowsers.set(browserName, slot); }
+    const type = browserName === "firefox" ? firefox : chromium;
+    const launchOptions = browserName === "firefox" ? {} : { channel: browserName };
+    return slot.get(() => type.connect(endpoint, {
+      timeout: 60000, headers: { "x-playwright-launch-options": JSON.stringify(launchOptions) }
+    }));
+  }
+
   async launch(target: DeviceTarget): Promise<DeviceSession> {
-    let page: Page;
-    let context: BrowserContext | null = null;
-    let isRealRemote = false;
+    const generation = this.generation;
+    const warnings: string[] = [];
+    let browser: Browser | null = null;
+    let fidelity: DeviceTarget["fidelity"] = "approximate";
 
-    if (this.remoteUrl) {
-      try {
-        const browser = await chromium.connectOverCDP(this.remoteUrl);
-        const contexts = browser.contexts();
-        context = contexts.length > 0 ? contexts[0] : await browser.newContext();
-        page = context.pages().length > 0 ? context.pages()[0] : await context.newPage();
-        isRealRemote = true;
-      } catch {
-        // Fall back to local simulation
+    try {
+      const endpoint = await this.resolveEndpoint(generation);
+      this.assertGeneration(generation);
+      if (endpoint) {
+        browser = await this.remoteBrowser(endpoint, target);
+        fidelity = "real";
+      } else {
+        warnings.push(`${target.id}: no Windows host configured; rendered with approximate Linux Chromium`);
       }
+    } catch (err) {
+      this.assertGeneration(generation);
+      if (process.env.PIXELSENTINEL_STRICT_DEVICES === "1") throw err;
+      warnings.push(`${target.id}: Windows host unreachable (${(err as Error).message.split("\n")[0]}); rendered with approximate Linux Chromium`);
     }
 
-    if (!page!) {
-      if (!this.browser) {
-        this.browser = await chromium.launch({
-          headless: true,
-          args: ["--disable-animations", "--disable-dev-shm-usage", "--no-sandbox"]
-        });
-      }
+    this.assertGeneration(generation);
+    if (!browser) browser = await this.fallbackBrowser.get(() => chromium.launch({
+      headless: true, args: ["--disable-animations", "--disable-dev-shm-usage", "--no-sandbox"]
+    }));
+    this.assertGeneration(generation);
 
-      context = await this.browser.newContext({
-        viewport: target.viewport,
-        deviceScaleFactor: target.deviceScaleFactor,
-        isMobile: false,
-        hasTouch: false,
-        userAgent:
-          target.userAgent ||
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0"
-      });
-      page = await context.newPage();
-    }
-
-    let currentTarget: DeviceTarget = {
-      ...target,
-      fidelity: (isRealRemote ? "real" : "approximate") as DeviceTarget["fidelity"]
-    };
-
-    const control = new WindowsControl(
-      page,
-      () => currentTarget,
-      (next) => {
-        currentTarget = next;
-      }
-    );
-
-    const sessionId = `win-${crypto.randomUUID().slice(0, 8)}`;
+    const context: BrowserContext = await browser.newContext({
+      viewport: target.viewport,
+      deviceScaleFactor: target.windows?.scale ?? target.deviceScaleFactor,
+      isMobile: false,
+      hasTouch: false,
+      // On a real Windows host keep the browser's genuine UA
+      userAgent: fidelity === "real" ? undefined : target.userAgent,
+      colorScheme: target.modifiers?.darkMode ? "dark" : undefined
+    });
+    const page: Page = await context.newPage();
+    let currentTarget: DeviceTarget = { ...target, fidelity };
+    const control = new PlaywrightControl(page, () => currentTarget, (n) => (currentTarget = n));
 
     return {
-      id: sessionId,
-      target: currentTarget,
+      id: `win-${crypto.randomUUID().slice(0, 8)}`,
+      get target() {
+        return currentTarget;
+      },
       page,
       control,
+      warnings,
+      deviceInfo: fidelity === "real" ? { endpoint: this.endpoint, browser: target.windows?.browser } : undefined,
+      prepareUrl: async (url: string) => {
+        // The guest reaches the host's localhost via QEMU user-net gateway 10.0.2.2
+        if (fidelity !== "real" || !this.vm) return url;
+        const u = new URL(url);
+        if (["localhost", "127.0.0.1", "0.0.0.0"].includes(u.hostname)) u.hostname = "10.0.2.2";
+        return u.toString();
+      },
       close: async () => {
-        await page.close().catch(() => {});
-        if (context && !isRealRemote) {
-          await context.close().catch(() => {});
-        }
+        await context.close().catch(() => {});
       }
     };
   }
 
   async shutdown(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close().catch(() => {});
-      this.browser = null;
+    this.generation++;
+    const slots = [...this.remoteBrowsers.values()]; this.remoteBrowsers.clear();
+    await Promise.all([...slots.map((slot) => slot.close()), this.fallbackBrowser.close()]);
+    if (this.vm && process.env.PIXELSENTINEL_KEEP_WINDOWS_VM !== "1") {
+      await this.vm.stop().catch(() => {});
+      this.vm = null;
+      this.endpoint = process.env.PIXELSENTINEL_WINDOWS_ENDPOINT || null;
     }
   }
 }

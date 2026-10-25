@@ -127,12 +127,11 @@ fi
 
 # 4. Check Port Availability
 if command -v lsof >/dev/null 2>&1; then
-  OCCUPYING_PID=$(lsof -ti :"$PORT" 2>/dev/null || true)
+  OCCUPYING_PID=$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)
   if [ -n "$OCCUPYING_PID" ]; then
-    echo -e "${YELLOW}Warning: Port $PORT is already in use by process PID $OCCUPYING_PID.${NC}"
-    echo -e "Attempting to release port $PORT..."
-    kill "$OCCUPYING_PID" 2>/dev/null || true
-    sleep 1
+    echo -e "${YELLOW}Port $PORT is already in use. Existing processes have been left running.${NC}"
+    echo "Open http://localhost:$PORT or choose another port with --port."
+    exit 0
   fi
 fi
 

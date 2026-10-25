@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r --filter=!@pixelsentinel/web build && pnpm --filter=@pixelsentinel/web build",
-    "test": "vitest run",
+    "test": "pnpm build && vitest run",
     "test:watch": "vitest",
-    "typecheck": "pnpm -r exec tsc --noEmit",
+    "test:android:live": "pnpm build && PIXELSENTINEL_RUN_ANDROID_LIVE=1 vitest run packages/core/test/android-live.test.ts",
+    "typecheck": "pnpm -r --filter=!@pixelsentinel/android-shell exec tsc --noEmit",
     "pixelsentinel": "tsx packages/cli/src/bin.ts"
   },
   "devDependencies": {

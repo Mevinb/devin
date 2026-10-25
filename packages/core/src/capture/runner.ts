@@ -1,19 +1,11 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import { chromium, devices, type Browser } from "playwright";
 import type { RenderConfig, ScanConfig } from "../config/schema.js";
-import { extractDOMSnapshotInBrowser } from "./dom-snapshot.js";
-import type { CaptureMetadata, CaptureResult, DOMSnapshot, FailedRequest } from "./types.js";
-
-const DISABLE_ANIMATIONS_CSS = `
-*, *::before, *::after {
-  animation-duration: 0s !important;
-  animation-delay: 0s !important;
-  transition-duration: 0s !important;
-  transition-delay: 0s !important;
-  caret-color: transparent !important;
-}
-`;
+import { captureSession } from "./session.js";
+import type { CaptureResult } from "./types.js";
+import { PlaywrightControl } from "../runtime/playwright.js";
+import type { DeviceTarget } from "../runtime/types.js";
+import { globalDeviceRegistry } from "../runtime/registry.js";
+import { BrowserSlot } from "../runtime/browser-slot.js";
 
 export interface CaptureProgressCallback {
   (completed: number, total: number, currentRenderId: string): void;
@@ -21,25 +13,26 @@ export interface CaptureProgressCallback {
 
 export class CaptureRunner {
   private browser: Browser | null = null;
+  private browserSlot = new BrowserSlot();
+  private closed = false;
 
   async init(): Promise<void> {
+    if (this.closed) throw new Error("Capture runner has closed");
     if (!this.browser) {
-      this.browser = await chromium.launch({
+      this.browser = await this.browserSlot.get(() => chromium.launch({
         headless: true,
         args: [
           "--disable-animations",
           "--disable-dev-shm-usage",
           "--no-sandbox"
         ]
-      });
+      }));
     }
   }
 
   async close(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
-    }
+    this.closed = true; this.browser = null;
+    await this.browserSlot.close();
   }
 
   async captureOne(
@@ -48,14 +41,12 @@ export class CaptureRunner {
     scanConfig: ScanConfig,
     outputBaseDir: string
   ): Promise<CaptureResult> {
+    if (this.closed) throw new Error("Capture runner has closed");
     if (!this.browser) {
       await this.init();
     }
 
     const browser = this.browser!;
-    const renderDir = path.join(outputBaseDir, "renders", renderConfig.renderId);
-    await fs.mkdir(renderDir, { recursive: true });
-
     let contextOptions: Record<string, unknown> = {
       viewport: {
         width: renderConfig.width,
@@ -80,103 +71,17 @@ export class CaptureRunner {
     const context = await browser.newContext(contextOptions);
     const page = await context.newPage();
 
-    const consoleErrors: string[] = [];
-    const failedRequests: FailedRequest[] = [];
-
-    page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        consoleErrors.push(msg.text());
-      }
-    });
-
-    page.on("requestfailed", (req) => {
-      failedRequests.push({
-        url: req.url(),
-        error: req.failure()?.errorText || "Unknown network failure"
-      });
-    });
-
-    page.on("response", (res) => {
-      if (res.status() >= 400) {
-        failedRequests.push({
-          url: res.url(),
-          status: res.status()
-        });
-      }
-    });
-
+    let target: DeviceTarget = globalDeviceRegistry.resolveTarget(renderConfig);
+    const control = new PlaywrightControl(page, () => target, (next) => { target = next; });
     try {
-      await page.goto(url, {
-        waitUntil: scanConfig.waitUntil,
-        timeout: 30000
-      });
-
-      // Inject style to kill animations and transitions
-      await page.addStyleTag({ content: DISABLE_ANIMATIONS_CSS });
-
-      // Wait for font loading
-      await page.evaluate(async () => {
-        if (document.fonts && document.fonts.ready) {
-          await document.fonts.ready;
-        }
-      });
-
-      // Extra stabilization wait
-      if (scanConfig.extraWaitMs > 0) {
-        await new Promise((r) => setTimeout(r, scanConfig.extraWaitMs));
-      }
-
-      // Extract DOM snapshot
-      const domSnapshot = (await page.evaluate(
-        extractDOMSnapshotInBrowser
-      )) as DOMSnapshot;
-
-      // Check horizontal overflow
-      const hasHorizontalScroll =
-        domSnapshot.document.scrollWidth > domSnapshot.document.innerWidth + 2;
-
-      // Capture screenshot
-      const screenshotBuffer = await page.screenshot({
-        fullPage: scanConfig.fullPage,
-        type: "png"
-      });
-
-      const screenshotPath = path.join(renderDir, "screenshot.png");
-      const domPath = path.join(renderDir, "dom.json");
-      const metaPath = path.join(renderDir, "meta.json");
-
-      await fs.writeFile(screenshotPath, screenshotBuffer);
-      await fs.writeFile(domPath, JSON.stringify(domSnapshot, null, 2), "utf8");
-
-      const metadata: CaptureMetadata = {
-        renderId: renderConfig.renderId,
-        viewport: renderConfig,
-        url,
-        timestamp: new Date().toISOString(),
-        consoleErrors,
-        failedRequests,
-        hasHorizontalScroll,
-        screenshotPath,
-        domPath,
-        dimensions: {
-          viewportWidth: renderConfig.width,
-          viewportHeight: renderConfig.height,
-          pageWidth: domSnapshot.document.scrollWidth,
-          pageHeight: domSnapshot.document.scrollHeight
-        }
-      };
-
-      await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2), "utf8");
-
-      return {
-        renderConfig,
-        screenshotBuffer,
-        screenshotPath,
-        domSnapshot,
-        domPath,
-        metadata,
-        metaPath
-      };
+      const capture = await captureSession({ id: renderConfig.renderId, get target() { return target; }, page, control, warnings: [], close: async () => {} },
+        url, scanConfig, outputBaseDir, renderConfig.renderId);
+      // Legacy viewport identity and descriptor geometry remain the caller's
+      // configuration; the shared pipeline adds capture bounds and errors.
+      capture.renderConfig = renderConfig;
+      capture.metadata.viewport = renderConfig;
+      await fs.writeFile(capture.metaPath, JSON.stringify(capture.metadata, null, 2));
+      return capture;
     } finally {
       await page.close().catch(() => {});
       await context.close().catch(() => {});
@@ -188,7 +93,8 @@ export class CaptureRunner {
     renderConfigs: RenderConfig[],
     scanConfig: ScanConfig,
     outputBaseDir: string,
-    onProgress?: CaptureProgressCallback
+    onProgress?: CaptureProgressCallback,
+    onCapture?: (capture: CaptureResult) => void
   ): Promise<CaptureResult[]> {
     await this.init();
 
@@ -207,6 +113,7 @@ export class CaptureRunner {
 
         const result = await this.captureOne(url, config, scanConfig, outputBaseDir);
         results.push(result);
+        onCapture?.(result);
         completed++;
         if (onProgress) {
           onProgress(completed, total, config.renderId);
@@ -228,3 +135,4 @@ export class CaptureRunner {
     return results;
   }
 }
+import fs from "node:fs/promises";

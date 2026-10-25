@@ -13,12 +13,15 @@ export function correlateAndFuseFindings(
   visionFindings: VisionFinding[]
 ): Finding[] {
   const { domSnapshot, renderConfig } = capture;
-  const pageWidth = domSnapshot.document.scrollWidth;
-  const pageHeight = domSnapshot.document.scrollHeight;
+  const geometry = capture.metadata.screenshotGeometry;
+  const pageWidth = geometry?.cssWidth ?? domSnapshot.document.scrollWidth;
+  const pageHeight = geometry?.cssHeight ?? domSnapshot.document.scrollHeight;
 
   // Convert vision findings to standard Finding objects
   const convertedVisionFindings: Finding[] = visionFindings.map((vf, index) => {
     const cssBBox = normalizedBBoxToCSSPixels(vf.bbox, pageWidth, pageHeight);
+    cssBBox.x += geometry?.originX ?? 0; cssBBox.left += geometry?.originX ?? 0; cssBBox.right += geometry?.originX ?? 0;
+    cssBBox.y += geometry?.originY ?? 0; cssBBox.top += geometry?.originY ?? 0; cssBBox.bottom += geometry?.originY ?? 0;
     const matchedElements = matchBBoxToDOMElements(cssBBox, domSnapshot.elements);
 
     return {

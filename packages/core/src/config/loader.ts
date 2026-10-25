@@ -60,6 +60,10 @@ export async function resolveScanConfig(
       ...(typeof fileConfig.output === "object" && fileConfig.output !== null ? fileConfig.output : {}),
       ...(input.output || {})
     },
+    budget: {
+      ...(typeof fileConfig.budget === "object" && fileConfig.budget !== null ? fileConfig.budget : {}),
+      ...(input.budget || {})
+    },
     devServer: {
       ...(typeof fileConfig.devServer === "object" && fileConfig.devServer !== null ? fileConfig.devServer : {}),
       ...(input.devServer || {})

@@ -9,3 +9,4 @@ export * from "./report/index.js";
 export * from "./runtime/index.js";
 export * from "./explore/index.js";
 export * from "./scanner.js";
+export * from "./budget.js";

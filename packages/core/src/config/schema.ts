@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BudgetConfigSchema } from "../budget.js";
 
 export const ViewportConfigSchema = z.object({
   name: z.string(),
@@ -40,7 +41,7 @@ export type OutputConfig = z.infer<typeof OutputConfigSchema>;
 
 export const DevServerConfigSchema = z.object({
   command: z.string().optional(),
-  port: z.number().int().positive().optional(),
+  port: z.number().int().nonnegative().optional(),
   readyTimeoutMs: z.number().int().positive().default(30000)
 });
 
@@ -59,6 +60,18 @@ export const DeviceTargetSchema = z.object({
   userAgent: z.string().optional(),
   isMobile: z.boolean().default(false),
   hasTouch: z.boolean().default(false),
+  engine: z.enum(["chromium", "webkit", "firefox"]).optional(),
+  android: z.object({
+    avd: z.string(), profile: z.string(), browser: z.enum(["chrome", "webview-shell"]),
+    display: z.object({ width: z.number().positive(), height: z.number().positive(), density: z.number().positive() }).optional(),
+    input: z.enum(["touch", "dpad"]).optional()
+  }).optional(),
+  windows: z.object({ browser: z.enum(["msedge", "chrome", "firefox"]), scale: z.number().positive() }).optional(),
+  modifiers: z.object({
+    orientation: z.enum(["portrait", "landscape"]).optional(),
+    posture: z.enum(["folded", "unfolded", "half-opened"]).optional(),
+    fontScale: z.number().positive().optional(), darkMode: z.boolean().optional()
+  }).optional(),
   orientation: z.enum(["portrait", "landscape"]).default("landscape").optional(),
   safeAreaInsets: z
     .object({
@@ -86,7 +99,8 @@ export const DeviceTargetSchema = z.object({
     .optional(),
   isTV: z.boolean().optional(),
   isWearable: z.boolean().optional(),
-  isFoldable: z.boolean().optional()
+  isFoldable: z.boolean().optional(),
+  isAutomotive: z.boolean().optional()
 });
 
 export type DeviceConfig = z.infer<typeof DeviceTargetSchema>;
@@ -101,6 +115,7 @@ export const ScanConfigSchema = z.object({
   extraWaitMs: z.number().int().nonnegative().default(1000),
   concurrency: z.number().int().positive().default(4),
   devServer: DevServerConfigSchema.optional(),
+  budget: BudgetConfigSchema.default({}),
   vision: VisionConfigSchema.default({}),
   output: OutputConfigSchema.default({})
 });

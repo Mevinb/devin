@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lumen Notes</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">Lumen Notes</h1>
+    <button class="menu-toggle" id="menuToggle" aria-label="Open menu">☰ Menu</button>
+    <nav class="main-nav" id="mainNav">
+      <a href="#home" id="navHome" class="nav-link">Home</a>
+      <a href="#pricing" id="navPricing" class="nav-link">Pricing</a>
+      <a href="#contact" id="navContact" class="nav-link">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="view active">
+      <h2>Your notes, everywhere</h2>
+      <p class="lead">Sync across phone, tablet, TV and desktop.</p>
+      <button class="cta" id="btnTrial">Start free trial</button>
+      <button class="icon-btn" id="btnShare" title="Share">⇪</button>
+      <button class="cta secondary" id="btnReviews">Load reviews</button>
+    </section>
+
+    <section id="pricing" class="view">
+      <h2>Pricing</h2>
+      <div class="price-card" id="planPro">
+        <h3>Pro</h3>
+        <p>Unlimited notebooks, offline mode and priority support for your whole team.</p>
+      </div>
+    </section>
+
+    <section id="contact" class="view">
+      <h2>Contact us</h2>
+      <form id="contactForm" novalidate>
+        <label>Email <input id="contactEmail" type="email" required></label>
+        <button type="submit" class="cta" id="btnSend">Send</button>
+        <p class="error" id="contactError" hidden>Please enter a valid email address.</p>
+      </form>
+    </section>
+  </main>
+
+  <div class="modal" id="trialModal" hidden>
+    <div class="modal-card">
+      <h2 class="modal-title">Trial started</h2>
+      <p>Enjoy 14 days of Pro.</p>
+      <button class="cta" id="btnCloseTrial">Got it</button>
+    </div>
+  </div>
+
+  <div class="chat-bar">
+    <input id="chatInput" placeholder="Ask support…">
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

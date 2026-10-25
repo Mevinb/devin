@@ -1,4 +1,4 @@
-import type { DOMRectJSON } from "../capture/types.js";
+import type { CaptureRenderConfig, DOMRectJSON } from "../capture/types.js";
 
 export type DefectType =
   | "horizontal-overflow"
@@ -15,7 +15,8 @@ export type DefectType =
   | "keyboard-obstruction"
   | "hinge-overlap"
   | "tv-overscan-violation"
-  | "tv-missing-focus-ring";
+  | "tv-missing-focus-ring"
+  | "runtime-error";
 
 export type DefectSeverity = "critical" | "warning" | "info";
 
@@ -24,6 +25,7 @@ export interface FindingElementRef {
   selector: string;
   tagName?: string;
   text?: string;
+  source?: { file: string; line: number };
 }
 
 export interface Finding {
@@ -36,10 +38,14 @@ export interface Finding {
   elements: FindingElementRef[];
   description: string;
   renderId: string;
+  /** Actual capture configuration for responsive CSS mapping and isolated replay. */
+  renderConfig?: CaptureRenderConfig;
   suggestedFix?: string;
   // Phase 2 State and Device metadata
   stateId?: string;
   trace?: string[];
+  /** Machine-readable actions (AgentAction[]) that reproduce the state; used by fix verification. */
+  actions?: unknown[];
   targetId?: string;
   device?: string;
   fidelity?: "real" | "webview" | "approximate";

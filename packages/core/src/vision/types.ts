@@ -1,6 +1,7 @@
 import type { RenderConfig } from "../config/schema.js";
 import type { DOMSnapshot } from "../capture/types.js";
 import type { DefectSeverity, DefectType } from "../heuristics/types.js";
+import type { RunBudget } from "../budget.js";
 
 /** Normalized coordinates 0.0 to 1.0 */
 export interface NormalizedBBox {
@@ -36,9 +37,18 @@ export interface RenderContext {
   domSnapshot: DOMSnapshot;
   imageWidth: number;
   imageHeight: number;
+  /** Document CSS offset of a viewport-only screenshot. */
+  originX?: number;
+  originY?: number;
 }
 
 export interface VisionProvider {
   name: string;
-  analyze(imageBuffer: Buffer, context: RenderContext): Promise<VisionAnalysisResult>;
+  warning?: string;
+  /** Explicitly declares that analysis never dispatches paid model requests. */
+  offline?: boolean;
+  /** Return a job-bound provider that meters every model attempt in this ledger.
+   * Do not mutate a provider that may be shared by concurrent jobs. */
+  withBudget?(budget: RunBudget): VisionProvider;
+  analyze(imageBuffer: Buffer, context: RenderContext, options?: { signal?: AbortSignal }): Promise<VisionAnalysisResult>;
 }

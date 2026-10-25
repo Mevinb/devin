@@ -12,9 +12,16 @@ export function generateScanReport(
     capture: CaptureResult;
     findings: Finding[];
     annotatedPath: string;
+    stateId?: string;
+    stateName?: string;
+    trace?: string[];
   }>,
-  durationMs: number = 0
+  durationMs: number = 0,
+  outputDir?: string
 ): ScanReport {
+  const rel = (p: string | undefined, fallback?: string) =>
+    p && outputDir ? path.relative(outputDir, p).split(path.sep).join("/") : fallback;
+  const fidelityBreakdown: Record<string, number> = {};
   const defectBreakdown: Record<string, number> = {};
   let criticalCount = 0;
   let warningCount = 0;
@@ -22,7 +29,9 @@ export function generateScanReport(
   let passedCount = 0;
   let failedCount = 0;
 
-  const matrixItems: RenderReportItem[] = results.map(({ capture, findings, annotatedPath }) => {
+  const matrixItems: RenderReportItem[] = results.map(({ capture, findings, annotatedPath, stateId, stateName, trace }) => {
+    const fidelity = capture.metadata.device?.fidelity;
+    if (fidelity) fidelityBreakdown[fidelity] = (fidelityBreakdown[fidelity] || 0) + 1;
     const cCount = findings.filter((f) => f.severity === "critical").length;
     const wCount = findings.filter((f) => f.severity === "warning").length;
     const iCount = findings.filter((f) => f.severity === "info").length;
@@ -54,11 +63,19 @@ export function generateScanReport(
         info: iCount,
         total: findings.length
       },
-      screenshotRelPath: `renders/${renderId}/screenshot.png`,
-      annotatedRelPath: `renders/${renderId}/annotated.png`,
+      screenshotRelPath: rel(capture.screenshotPath, `renders/${renderId}/screenshot.png`)!,
+      annotatedRelPath: rel(annotatedPath, `renders/${renderId}/annotated.png`)!,
       findings,
       consoleErrors: capture.metadata.consoleErrors,
-      failedRequests: capture.metadata.failedRequests
+      failedRequests: capture.metadata.failedRequests,
+      device: capture.metadata.device,
+      deviceScreenshotRelPath: rel(capture.metadata.deviceScreenshotPath),
+      keyboardProbes: capture.metadata.keyboardProbes,
+      pageErrors: capture.metadata.pageErrors,
+      warnings: capture.metadata.warnings,
+      stateId,
+      stateName,
+      trace
     };
   });
 
@@ -73,16 +90,20 @@ export function generateScanReport(
     passedViewports: passedCount,
     failedViewports: failedCount,
     defectBreakdown,
-    durationMs
+    durationMs,
+    fidelityBreakdown: Object.keys(fidelityBreakdown).length ? fidelityBreakdown : undefined
   };
+  const warnings = [...new Set(results.flatMap((r) => r.capture.metadata.warnings ?? []))];
 
   return {
     id: `scan-${Date.now()}`,
     timestamp: new Date().toISOString(),
     target,
     summary,
+    mode: results.some((r) => r.stateId) ? "explore" : results.some((r) => r.capture.metadata.device) ? "devices" : "viewports",
     matrix: matrixItems,
-    config
+    config,
+    warnings: warnings.length ? warnings : undefined
   };
 }
 

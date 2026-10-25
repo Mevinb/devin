@@ -13,3 +13,4 @@ pixelsentinel-output/
 **/pixelsentinel-output/
 scratch/
 .pixelsentinel/
+.*-test.mts

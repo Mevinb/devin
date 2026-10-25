@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { chromium, webkit, type Browser, type BrowserContext, type Page } from "playwright";
+import { BrowserSlot } from "./browser-slot.js";
 import type {
   DeviceAvailability,
   DeviceControl,
@@ -82,8 +83,8 @@ export class PlaywrightControl implements DeviceControl {
 
 export class PlaywrightRuntime implements DeviceRuntime {
   readonly name = "playwright";
-  private chromiumBrowser: Browser | null = null;
-  private webkitBrowser: Browser | null = null;
+  private chromiumBrowser = new BrowserSlot();
+  private webkitBrowser = new BrowserSlot();
 
   async isAvailable(): Promise<DeviceAvailability> {
     return { available: true };
@@ -91,42 +92,51 @@ export class PlaywrightRuntime implements DeviceRuntime {
 
   private async getBrowser(engine: "chromium" | "webkit"): Promise<Browser> {
     if (engine === "webkit") {
-      if (!this.webkitBrowser) {
-        this.webkitBrowser = await webkit.launch({
-          headless: true
-        });
-      }
-      return this.webkitBrowser;
+      return this.webkitBrowser.get(() => webkit.launch({ headless: true }));
     }
-
-    if (!this.chromiumBrowser) {
-      this.chromiumBrowser = await chromium.launch({
+    return this.chromiumBrowser.get(() => chromium.launch({
         headless: true,
         args: ["--disable-animations", "--disable-dev-shm-usage", "--no-sandbox"]
-      });
-    }
-    return this.chromiumBrowser;
+      }));
   }
 
   async launch(target: DeviceTarget): Promise<DeviceSession> {
-    const isWebKit = target.id.startsWith("webkit:") || target.userAgent?.includes("Safari") && !target.userAgent.includes("Chrome");
+    const isWebKit = target.engine === "webkit" || target.id.startsWith("webkit:");
     const browser = await this.getBrowser(isWebKit ? "webkit" : "chromium");
+    const modifiers = target.modifiers ?? {};
+    let viewport = { ...target.viewport };
+    const isPortrait = viewport.height >= viewport.width;
+    if (
+      (modifiers.orientation === "landscape" && isPortrait) ||
+      (modifiers.orientation === "portrait" && !isPortrait)
+    ) {
+      viewport = { width: viewport.height, height: viewport.width };
+    }
 
     const contextOptions: Parameters<Browser["newContext"]>[0] = {
-      viewport: {
-        width: target.viewport.width,
-        height: target.viewport.height
-      },
+      viewport,
       deviceScaleFactor: target.deviceScaleFactor,
       isMobile: target.isMobile,
       hasTouch: target.hasTouch,
-      userAgent: target.userAgent
+      userAgent: target.userAgent,
+      colorScheme: modifiers.darkMode ? "dark" : undefined
     };
 
     const context: BrowserContext = await browser.newContext(contextOptions);
     const page: Page = await context.newPage();
+    if (modifiers.fontScale && modifiers.fontScale !== 1) {
+      await page.addInitScript((scale) => {
+        document.addEventListener("DOMContentLoaded", () => {
+          document.documentElement.style.fontSize = `${scale * 100}%`;
+        });
+      }, modifiers.fontScale);
+    }
 
-    let currentTarget = { ...target };
+    let currentTarget: DeviceTarget = {
+      ...target,
+      viewport,
+      orientation: viewport.height >= viewport.width ? "portrait" : "landscape"
+    };
     const control = new PlaywrightControl(
       page,
       () => currentTarget,
@@ -139,9 +149,12 @@ export class PlaywrightRuntime implements DeviceRuntime {
 
     return {
       id: sessionId,
-      target: currentTarget,
+      get target() {
+        return currentTarget;
+      },
       page,
       control,
+      warnings: [],
       close: async () => {
         await page.close().catch(() => {});
         await context.close().catch(() => {});
@@ -150,13 +163,6 @@ export class PlaywrightRuntime implements DeviceRuntime {
   }
 
   async shutdown(): Promise<void> {
-    if (this.chromiumBrowser) {
-      await this.chromiumBrowser.close().catch(() => {});
-      this.chromiumBrowser = null;
-    }
-    if (this.webkitBrowser) {
-      await this.webkitBrowser.close().catch(() => {});
-      this.webkitBrowser = null;
-    }
+    await Promise.all([this.chromiumBrowser.close(), this.webkitBrowser.close()]);
   }
 }
